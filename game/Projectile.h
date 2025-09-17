@@ -145,6 +145,7 @@ private:
 	int						launchTime;
 	idVec3					launchOrig;
 	idVec3					launchDir;
+	idVec3					launchEnd;
 	// set from def file in :Launch on both client and server
 	float					launchSpeed;
 };
