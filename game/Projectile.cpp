@@ -335,6 +335,10 @@ void idProjectile::Launch( const idVec3 &start, const idVec3 &dir, const idVec3 
 	int				contents;
  	int				clipMask;
 
+	/*if (owner.GetEntity() && owner.GetEntity()->IsType(idPlayer::GetClassType())) {
+		gameLocal.Printf("launched: %s\n", spawnArgs.GetString("classname"));
+	}*/
+
  	// allow characters to throw projectiles during cinematics, but not the player
  	if ( owner.GetEntity() && !owner.GetEntity()->IsType( idPlayer::GetClassType() ) ) {
  		cinematic = owner.GetEntity()->cinematic;
@@ -719,6 +723,9 @@ bool idProjectile::Collide( const trace_t &collision, const idVec3 &velocity, bo
 	if ( ent == owner.GetEntity() ) {
 		// assert( 0 );		// twhitaker: this isn't necessary
 		return true;
+	}
+	if (owner.GetEntity() && owner.GetEntity()->IsType(idPlayer::GetClassType())) {
+		gameLocal.Printf("enemy: %s\n", ent->spawnArgs.GetString("classname"));
 	}
 
  	// just get rid of the projectile when it hits a player in noclip
@@ -1189,7 +1196,9 @@ void idProjectile::Explode( const trace_t *collision, const bool showExplodeFX, 
 	state = EXPLODED;
 
 	if (owner.GetEntity() && owner.GetEntity()->IsType(idPlayer::GetClassType())) {
-		if (spawnArgs.GetString("classname", "projectile_rocket")) {
+		const char* projName = spawnArgs.GetString("classname", "");
+		gameLocal.Printf("projName %s\n", projName);
+		if (strcmp(projName, "projectile_rocket") == 0) {
 			launchEnd = GetEyePosition();
 			idMat3 normalMat = this->GetPhysics()->GetAxis();
 			idVec3 normal = normalMat[0];
@@ -1200,6 +1209,23 @@ void idProjectile::Explode( const trace_t *collision, const bool showExplodeFX, 
 			grenade = static_cast<idProjectile*>(gameLocal.SpawnEntityDef("projectile_grenade"));
 			grenade->Create(NULL, launchEnd, axisMat[0], this);
 			grenade->Launch(launchEnd, axisMat[0], axisMat[0]);
+		}
+	}
+
+	if (owner.GetEntity() && owner.GetEntity()->IsType(idPlayer::GetClassType())) {
+		const char* projName = spawnArgs.GetString("classname", "");
+		if (strcmp(projName, "projectile_grenade") == 0) {
+			gameLocal.Printf("Yes");
+			launchEnd = GetEyePosition();
+			idMat3 normalMat = this->GetPhysics()->GetAxis();
+			idVec3 normal = normalMat[0];
+			idVec3 axis = normalMat[1];
+			idMat3 axisMat;
+			idDict dict;
+			dict.Set("classname", "monster_strogg_marine");
+			dict.Set("origin", launchEnd.ToString());
+			idEntity* harvester = NULL;
+			gameLocal.SpawnEntityDef(dict, &harvester);
 		}
 	}
 
