@@ -442,6 +442,7 @@ public:
 
 	void					Spawn							( void );
 	virtual void			TalkTo							( idActor *actor );
+	void					GiveXP							( int );
 
 	idEntity*				GetEnemy						( void ) const;
  	idEntity*				GetGoalEntity					( void ) const;
@@ -570,6 +571,7 @@ public:
 		bool		tetherMover				:1;			// Currently using a dynamic tether to a mover
 		bool		meleeSuperhero			:1;
 		bool		killerGuard				:1;			// Do 100 points of damage with each hit
+		bool		pokemon					:1;
 	} aifl;
 	
 	//
@@ -1354,6 +1356,10 @@ ID_INLINE void idAI::ForceTacticalUpdate ( void ) {
 	delete aasFind;
 	aasFind = NULL;
 }	
+
+ID_INLINE void idAI::GiveXP(int) {
+	return;
+}
 
 /*
 ===============================================================================

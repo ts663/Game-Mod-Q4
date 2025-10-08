@@ -1087,17 +1087,17 @@ void idProjectile::Fizzle( void ) {
 
 	if (owner.GetEntity() && owner.GetEntity()->IsType(idPlayer::GetClassType())) {
 		const char* projName = spawnArgs.GetString("classname", "");
-		if (strcmp(projName, "projectile_grenade") == 0) {
+		if (idStr::Icmp(projName, "projectile_pokeball") == 0) {
 			launchEnd = GetEyePosition();
 			idMat3 normalMat = this->GetPhysics()->GetAxis();
 			idVec3 normal = normalMat[0];
 			idVec3 axis = normalMat[1];
 			idMat3 axisMat;
 			idDict dict;
-			dict.Set("classname", "monster_strogg_marine");
+			dict.Set("classname", "monster_pokemon_strogg_marine");
 			dict.Set("origin", launchEnd.ToString());
-			idEntity* harvester = NULL;
-			gameLocal.SpawnEntityDef(dict, &harvester);
+			idEntity* pokemon = NULL;
+			gameLocal.SpawnEntityDef(dict, &pokemon);
 		}
 	}
 

@@ -634,6 +634,7 @@ void idAI::Spawn( void ) {
 	aifl.undying		  		= spawnArgs.GetBool ( "undying", "0" );
 	aifl.killerGuard			= spawnArgs.GetBool ( "killer_guard", "0" );
 	aifl.scriptedEndWithIdle	= true;
+	aifl.pokemon				= spawnArgs.GetBool ( "pokemon", "0" );
 
 	// Setup Move Data
 	move.Spawn( spawnArgs );
@@ -1770,6 +1771,7 @@ Notifies the script that a monster has been activated by a trigger or flashlight
 */
 void idAI::Activate( idEntity *activator ) {
 	idPlayer *player;
+	idEntity* ent;
 
 	// Set our tether?
 	if ( activator && activator->IsType ( rvAITether::GetClassType ( ) ) ) {
@@ -1787,11 +1789,18 @@ void idAI::Activate( idEntity *activator ) {
 	aifl.activated = true;
 	if ( !activator || !activator->IsType( idPlayer::GetClassType() ) ) {
 		player = gameLocal.GetLocalPlayer();
+	}
+	else if (activator->IsType(idAI::GetClassType()) && aifl.pokemon) {
+		ent = static_cast<idEntity*>(activator);
 	} else {
 		player = static_cast<idPlayer *>( activator );
 	}
 
-	if ( ReactionTo( player ) & ATTACK_ON_ACTIVATE ) {
+	if (aifl.pokemon) {
+		if ( ReactionTo( ent ) & ATTACK_ON_ACTIVATE ) {
+			SetEnemy( ent );
+		}
+	} else if ( ReactionTo( player ) & ATTACK_ON_ACTIVATE ) {
 		SetEnemy( player );
 	}
 	

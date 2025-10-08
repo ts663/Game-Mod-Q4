@@ -26,7 +26,7 @@
 // RAVEN END
 
 #ifdef _WIN32
-#include "TypeInfo.h"
+#include "TypeInfo"
 #else
 #include "NoGameTypeInfo.h"
 #endif
@@ -171,7 +171,7 @@ void Cmd_ListSpawnArgs_f( const idCmdArgs &args ) {
 
 	for ( i = 0; i < ent->spawnArgs.GetNumKeyVals(); i++ ) {
 		const idKeyValue *kv = ent->spawnArgs.GetKeyVal( i );
-		gameLocal.Printf( "\"%s\"  "S_COLOR_WHITE"\"%s\"\n", kv->GetKey().c_str(), kv->GetValue().c_str() );
+		gameLocal.Printf( "\"%s\"  " S_COLOR_WHITE "\"%s\"\n", kv->GetKey().c_str(), kv->GetValue().c_str() );
 	}
 }
 
@@ -1103,6 +1103,36 @@ void Cmd_Trigger_f( const idCmdArgs &args ) {
 	ent->Signal( SIG_TRIGGER );
 	ent->ProcessEvent( &EV_Activate, player );
 	ent->TriggerGuis();
+}
+
+void Cmd_Exists_f(const idCmdArgs& args) {
+	idEntity* ent;
+	const char* value = args.Argv(1);
+	const idDeclEntityDef* def = gameLocal.FindEntityDef(value, false);
+	if (def) {
+		gameLocal.Printf("%s exists\n", value);
+	}
+	else {
+		gameLocal.Printf("%s does not exist\n", value);
+	}
+}
+
+void Cmd_GiveXP_f(const idCmdArgs& args) {
+	const char* name = args.Argv(1);
+	const char* amount = args.Argv(2);
+	idEntity* check;
+	int found = 0;
+	for (check = gameLocal.activeEntities.Next(); check != NULL; check = check->activeNode.Next()) {
+		if (idStr::Icmp(check->name.c_str(), name) == 0) {
+			found = 1;
+			break;
+		}
+	}
+	if (found) {
+		idAI* pokemon = dynamic_cast<idAI*>(check);
+		gameLocal.Printf("Giving XP");
+		pokemon->GiveXP(atoi(amount));
+	}
 }
 
 /*
@@ -3231,6 +3261,8 @@ void idGameLocal::InitConsoleCommands( void ) {
 // squirrel: Mode-agnostic buymenus
 	cmdSystem->AddCommand( "buyMenu",				Cmd_ToggleBuyMenu_f,		CMD_FL_GAME,				"Toggle buy menu (if in a buy zone and the game type supports it)" );
 	cmdSystem->AddCommand( "buy",					Cmd_BuyItem_f,				CMD_FL_GAME,				"Buy an item (if in a buy zone and the game type supports it)" );
+	cmdSystem->AddCommand( "exists",				Cmd_Exists_f,				CMD_FL_GAME|CMD_FL_CHEAT,	"Checks if entity defintion exists");
+	cmdSystem->AddCommand( "givexp",				Cmd_GiveXP_f,				CMD_FL_GAME|CMD_FL_CHEAT,	"Gives XP to pokemon");
 // RITUAL END
 
 }
