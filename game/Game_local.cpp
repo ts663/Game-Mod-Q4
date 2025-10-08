@@ -4839,6 +4839,7 @@ bool idGameLocal::SpawnEntityDef( const idDict &args, idEntity **ent, bool setDe
 			Warning( "Unknown classname '%s'%s.", classname, error.c_str() );
 		}
 // RAVEN END
+		gameLocal.Printf("def null\n");
 		return false;
 	}
 
@@ -4877,19 +4878,20 @@ bool idGameLocal::SpawnEntityDef( const idDict &args, idEntity **ent, bool setDe
 		}
 	}
 // RAVEN END
-
 	// check if we should spawn a class object
 	spawnArgs.GetString( "spawnclass", NULL, &spawn );
 	if ( spawn ) {
 
 		cls = idClass::GetClass( spawn );
 		if ( !cls ) {
+			gameLocal.Printf("Could not spawn '%s'.  Class '%s' not found%s.\n", classname, spawn, error.c_str());
 			Warning( "Could not spawn '%s'.  Class '%s' not found%s.", classname, spawn, error.c_str() );
 			return false;
 		}
 
 		obj = cls->CreateInstance();
 		if ( !obj ) {
+			gameLocal.Printf("Could not spawn '%s'. Instance could not be created%s.\n", classname, error.c_str());
 			Warning( "Could not spawn '%s'. Instance could not be created%s.", classname, error.c_str() );
 			return false;
 		}

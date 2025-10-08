@@ -11,7 +11,7 @@ instancing of objects.
 #include "../Game_local.h"
 
 #ifdef _WIN32
-#include "TypeInfo.h"
+#include "TypeInfo"
 #else
 #include "NoGameTypeInfo.h"
 #endif
@@ -1360,6 +1360,7 @@ void idClass::RegisterClasses( void )
 	REGISTER(rvMonsterIronMaiden); // ..\..\code\game\ai\Monster_IronMaiden.cpp
 	REGISTER(rvMonsterLightTank); // ..\..\code\game\ai\Monster_LightTank.cpp
 	REGISTER(rvMonsterNetworkGuardian); // ..\..\code\game\ai\Monster_NetworkGuardian.cpp
+	REGISTER(rvMonsterPokemonStroggMarine);// ..\..\game\ai\Monster_PokemonStroggMarine.cpp
 	REGISTER(rvMonsterRepairBot); // ..\..\code\game\ai\Monster_RepairBot.cpp
 	REGISTER(rvMonsterScientist); // ..\..\code\game\ai\Monster_Scientist.cpp
 	REGISTER(rvMonsterSentry); // ..\..\code\game\ai\Monster_Sentry.cpp
@@ -1420,6 +1421,7 @@ void idClass::RegisterClasses( void )
 	REGISTER(rvWeaponLightningGun); // ..\..\code\game\weapon\WeaponLightningGun.cpp
 	REGISTER(rvWeaponMachinegun); // ..\..\code\game\weapon\WeaponMachinegun.cpp
 	REGISTER(rvWeaponNailgun); // ..\..\code\game\weapon\WeaponNailgun.cpp
+	REGISTER(rvWeaponPokeballLauncher); // ..\..\code\game\weapon\WeaponPokeballLauncher.cpp
 	REGISTER(rvWeaponRailgun); // ..\..\code\game\weapon\WeaponRailgun.cpp
 	REGISTER(rvWeaponRocketLauncher); // ..\..\code\game\weapon\WeaponRocketLauncher.cpp
 	REGISTER(rvWeaponShotgun); // ..\..\code\game\weapon\WeaponShotgun.cpp
