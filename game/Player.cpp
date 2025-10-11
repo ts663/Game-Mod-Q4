@@ -4018,6 +4018,7 @@ void idPlayer::FireWeapon( void ) {
 */
 	if( hud && weaponChangeIconsUp ) {
 		hud->HandleNamedEvent( "weaponFire" );
+		hud->HandleNamedEvent( "hideHelpMenu" );
 		// nrausch: objectiveSystem does not necessarily exist (in mp it doesn't)
 		if ( objectiveSystem ) {
 			objectiveSystem->HandleNamedEvent( "weaponFire" );
@@ -6971,6 +6972,15 @@ void idPlayer::UpdateFocus( void ) {
 		
 		if ( isAI ) {
 			isFriendly = (static_cast<idAI *>( ent )->team == team);
+			if (idStr::Icmp(ent->spawnArgs.GetString("classname"), "monster_pokemon_strogg_marine") == 0) {
+				idAI* pokemon = static_cast<idAI*>(ent);
+				hud->HandleNamedEvent("showPokeInfo");
+				hud->SetStateString("pokename", "Strogg Marine");
+				hud->SetStateString("pokelevel", va("Level: %d", pokemon->level));
+				hud->SetStateString("pokexp", va("XP: %d / %d", pokemon->xp, pokemon->xpToLevelUp));
+			} else {
+				hud->HandleNamedEvent("hidePokeInfo");
+			}
 		}
 		
 		//change crosshair color if over a friendly

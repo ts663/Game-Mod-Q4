@@ -41,10 +41,6 @@ private:
 
 	void				CalculateShots(void);
 
-	int					xp;
-	int					level;
-	int					xpToLevelUp;
-
 	int					nextShootTime;
 	int					attackRate;
 	jointHandle_t		attackJoint;
@@ -143,18 +139,14 @@ rvMonsterPokemonStroggMarine::GiveXP
 void rvMonsterPokemonStroggMarine::GiveXP(int amount) {
 	while (amount > 0) {
 		if (xp + amount >= xpToLevelUp) {
-			xp += amount - xp;
-			amount -= amount - xp;
+			amount -= xpToLevelUp - xp;
+			xp = 0;
 			level++;
-			int pow = 1.5;
-			for (int i = 1; i < level; i++) {
-				pow *= 1.5;
-			}
-			xpToLevelUp = 500 * pow;
+			xpToLevelUp *= 1.5;
 		}
 		else {
 			xp += amount;
-			amount -= amount;
+			amount = 0;
 		}
 	}
 	gameLocal.Printf("Gave %d XP\nNow level %d\n", amount, level);

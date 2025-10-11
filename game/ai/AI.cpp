@@ -139,6 +139,10 @@ idAI::idAI ( void ) {
 	actionAnimNum	= 0;
 	actionSkipTime	= 0;
 	actionTime		= 0;
+
+	xp				= 0;
+	level			= 1;
+	xpToLevelUp		= 500;
 }
 
 /*
@@ -1487,13 +1491,13 @@ int idAI::ReactionTo( const idEntity *ent ) {
 	}
 
 	const idActor *actor = static_cast<const idActor *>( ent );
-	if ( actor->IsType( idPlayer::GetClassType() ) && static_cast<const idPlayer *>(actor)->noclip ) {
+	if ( actor->IsType( idPlayer::GetClassType() ) /* && static_cast<const idPlayer*>(actor)->noclip*/ ) {
 		// ignore players in noclip mode
 		return ATTACK_IGNORE;
 	}
 
 	// actors on different teams will always fight each other
-	if ( actor->team != team ) {
+	if ( actor->team != team && !actor->IsType( idPlayer::GetClassType() ) ) {
 		if ( actor->fl.notarget ) {
 			// don't attack on sight when attacker is notargeted
 			return ATTACK_ON_DAMAGE; /* | ATTACK_ON_ACTIVATE ; */
@@ -1796,13 +1800,13 @@ void idAI::Activate( idEntity *activator ) {
 		player = static_cast<idPlayer *>( activator );
 	}
 
-	if (aifl.pokemon) {
-		if ( ReactionTo( ent ) & ATTACK_ON_ACTIVATE ) {
-			SetEnemy( ent );
-		}
-	} else if ( ReactionTo( player ) & ATTACK_ON_ACTIVATE ) {
-		SetEnemy( player );
+	
+	if ( ReactionTo( ent ) & ATTACK_ON_ACTIVATE ) {
+		SetEnemy( ent );
 	}
+	/*} else if ( ReactionTo( player ) & ATTACK_ON_ACTIVATE ) {
+		SetEnemy( player );
+	}*/
 	
 	// If being activated by a spawner we need to attach to it
 	if ( activator && activator->IsType ( rvSpawner::GetClassType() ) ) {
@@ -2191,6 +2195,9 @@ bool idAI::SetEnemy( idEntity *newEnemy ) {
 	// Cant set enemy if the enemy is dead or has no target set
 	if ( newEnemy ) {
 		if ( newEnemy->health <= 0 || newEnemy->fl.notarget ) {
+			return false;
+		}
+		if (newEnemy->IsType(idPlayer::GetClassType())) {
 			return false;
 		}
 	}

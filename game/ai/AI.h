@@ -442,7 +442,8 @@ public:
 
 	void					Spawn							( void );
 	virtual void			TalkTo							( idActor *actor );
-	void					GiveXP							( int );
+	virtual void			GiveXP							( int );
+	virtual void			PrintDets						( void );
 
 	idEntity*				GetEnemy						( void ) const;
  	idEntity*				GetGoalEntity					( void ) const;
@@ -547,6 +548,10 @@ public:
 
 	idEntityPtr<idEntity>	pusher;
 	idEntityPtr<idEntity>	scriptedActionEnt;
+
+	int						xp;
+	int						level;
+	int						xpToLevelUp;
 
 	// script variables
 	struct aiFlags_s {
@@ -1358,6 +1363,10 @@ ID_INLINE void idAI::ForceTacticalUpdate ( void ) {
 }	
 
 ID_INLINE void idAI::GiveXP(int) {
+	return;
+}
+
+ID_INLINE void idAI::PrintDets(void) {
 	return;
 }
 

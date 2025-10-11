@@ -1105,6 +1105,11 @@ void Cmd_Trigger_f( const idCmdArgs &args ) {
 	ent->TriggerGuis();
 }
 
+/*
+=================
+Cmd_Exists_f
+=================
+*/
 void Cmd_Exists_f(const idCmdArgs& args) {
 	idEntity* ent;
 	const char* value = args.Argv(1);
@@ -1117,6 +1122,11 @@ void Cmd_Exists_f(const idCmdArgs& args) {
 	}
 }
 
+/*
+=================
+Cmd_GiveXP_f
+=================
+*/
 void Cmd_GiveXP_f(const idCmdArgs& args) {
 	const char* name = args.Argv(1);
 	const char* amount = args.Argv(2);
@@ -1130,9 +1140,51 @@ void Cmd_GiveXP_f(const idCmdArgs& args) {
 	}
 	if (found) {
 		idAI* pokemon = dynamic_cast<idAI*>(check);
-		gameLocal.Printf("Giving XP");
 		pokemon->GiveXP(atoi(amount));
 	}
+}
+
+/*
+=================
+Cmd_PrintDets_f
+=================
+*/
+void Cmd_PrintDets_f(const idCmdArgs& args) {
+	const char* name = args.Argv(1);
+	idEntity* check;
+	int found = 0;
+	for (check = gameLocal.activeEntities.Next(); check != NULL; check = check->activeNode.Next()) {
+		if (idStr::Icmp(check->name.c_str(), name) == 0) {
+			found = 1;
+			break;
+		}
+	}
+	if (found) {
+		idAI* pokemon = dynamic_cast<idAI*>(check);
+		pokemon->PrintDets();
+	}
+}
+
+/*
+=================
+Cmd_GetCursor_f
+=================
+*/
+void Cmd_GetCursor_f(const idCmdArgs& args) {
+	idPlayer* player;
+	idUserInterface* cursor;
+	
+	player = gameLocal.GetLocalPlayer();
+	if (!player) {
+		gameLocal.Printf("Player not found\n");
+		return;
+	}
+	if (!cursor) {
+		gameLocal.Printf("Cursor not found\n");
+		return;
+	}
+	cursor = player->GetCursorGUI();
+	gameLocal.Printf("cursor: (%f, %f)\n", cursor->CursorX(), cursor->CursorY());
 }
 
 /*
@@ -3261,9 +3313,11 @@ void idGameLocal::InitConsoleCommands( void ) {
 // squirrel: Mode-agnostic buymenus
 	cmdSystem->AddCommand( "buyMenu",				Cmd_ToggleBuyMenu_f,		CMD_FL_GAME,				"Toggle buy menu (if in a buy zone and the game type supports it)" );
 	cmdSystem->AddCommand( "buy",					Cmd_BuyItem_f,				CMD_FL_GAME,				"Buy an item (if in a buy zone and the game type supports it)" );
-	cmdSystem->AddCommand( "exists",				Cmd_Exists_f,				CMD_FL_GAME|CMD_FL_CHEAT,	"Checks if entity defintion exists");
-	cmdSystem->AddCommand( "givexp",				Cmd_GiveXP_f,				CMD_FL_GAME|CMD_FL_CHEAT,	"Gives XP to pokemon");
 // RITUAL END
+	cmdSystem->AddCommand("exists", Cmd_Exists_f, CMD_FL_GAME, "Checks if entity defintion exists");
+	cmdSystem->AddCommand("givexp", Cmd_GiveXP_f, CMD_FL_GAME, "Gives XP to pokemon");
+	cmdSystem->AddCommand("printdets", Cmd_PrintDets_f, CMD_FL_GAME, "Prints pokemon's details");
+	cmdSystem->AddCommand("cursor", Cmd_GetCursor_f, CMD_FL_GAME, "Prints cursor location");
 
 }
 
