@@ -869,13 +869,14 @@ void idAI::Spawn( void ) {
 	}
 
 	// Passive or aggressive ai?
-	if ( spawnArgs.GetBool ( "passive" ) ) {
+	/*if ( spawnArgs.GetBool ( "passive" ) ) {
 		Event_BecomePassive ( true );
 		
 		if ( spawnArgs.GetInt ( "passive" ) > 1 ) {
 			aifl.disableLook = true;
 		}
-	}
+	}*/
+	combat.fl.ignoreEnemies = true;
 	
 	// Print out a warning about any AI that is spawned unhidden since they will be all thinking
 	if( gameLocal.GameState ( ) == GAMESTATE_STARTUP && !spawnArgs.GetInt( "hide" ) && !spawnArgs.GetInt( "trigger_anim" ) && !spawnArgs.GetInt( "trigger_cover" ) && !spawnArgs.GetInt( "trigger_move" ) ){
@@ -2664,6 +2665,15 @@ idProjectile* idAI::AttackRanged (
 	if ( enemy.ent && enemy.ent->IsType ( idAI::GetClassType() ) ) {
 		static_cast<idAI*>(enemy.ent.GetEntity())->ReactToShotAt ( this, muzzleOrigin, axis[0] );
 	}
+	gameLocal.Printf("Ranged attack [%s] in AI.cpp\n", attackName);
+	if (aifl.pokemon) {
+		combat.fl.ignoreEnemies = true;
+		enemy.ent = NULL;
+		if (DefeatedEnemy()) {
+			gameLocal.GetLocalPlayer()->pfl.combat = false;
+			GiveXP(250);
+		}
+	}
 
 	return lastProjectile;
 }
@@ -2892,6 +2902,14 @@ bool idAI::AttackMelee ( const char *attackName, const idDict* meleeDict ) {
 
 	lastAttackTime = gameLocal.time;
 
+	if (aifl.pokemon) {
+		combat.fl.ignoreEnemies = true;
+		enemy.ent = NULL;
+		if (DefeatedEnemy()) {
+			gameLocal.GetLocalPlayer()->pfl.combat = false;
+			GiveXP(250);
+		}
+	}
 	return true;
 }
 
@@ -3412,6 +3430,10 @@ void idAI::OnTouch( idEntity *other, trace_t *trace ) {
 	}
 	pusher = other;
 	aifl.pushed = true;
+
+	if (other && other->IsType(idPlayer::GetClassType())) {
+		gameLocal.GetLocalPlayer()->pfl.combat = true;
+	}
 	
 	// If pushed by the player update tactical
 	if ( pusher && pusher->IsType ( idPlayer::GetClassType() ) && (combat.tacticalMaskAvailable & AITACTICAL_MOVE_PLAYERPUSH_BIT) ) {

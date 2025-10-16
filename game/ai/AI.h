@@ -444,6 +444,9 @@ public:
 	virtual void			TalkTo							( idActor *actor );
 	virtual void			GiveXP							( int );
 	virtual void			PrintDets						( void );
+	virtual bool			DefeatedEnemy					( void );
+	virtual void			PokemonAttackMelee				( void );
+	virtual void			PokemonAttackRanged				( void );
 
 	idEntity*				GetEnemy						( void ) const;
  	idEntity*				GetGoalEntity					( void ) const;
@@ -479,7 +482,6 @@ public:
    	bool					IsFacingEnt						( idEntity* targetEnt );
  	bool					IsCoverValid					( void ) const;
 	virtual bool			IsCrouching						( void ) const;
-
 
 public:
 
@@ -552,6 +554,7 @@ public:
 	int						xp;
 	int						level;
 	int						xpToLevelUp;
+	idAI*					pokemonArray[3];
 
 	// script variables
 	struct aiFlags_s {
@@ -1367,6 +1370,18 @@ ID_INLINE void idAI::GiveXP(int) {
 }
 
 ID_INLINE void idAI::PrintDets(void) {
+	return;
+}
+
+ID_INLINE bool idAI::DefeatedEnemy(void) {
+	return false;
+}
+
+ID_INLINE void idAI::PokemonAttackMelee(void) {
+	return;
+}
+
+ID_INLINE void idAI::PokemonAttackRanged(void) {
 	return;
 }
 

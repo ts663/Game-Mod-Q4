@@ -1167,24 +1167,44 @@ void Cmd_PrintDets_f(const idCmdArgs& args) {
 
 /*
 =================
-Cmd_GetCursor_f
+Cmd_AttackMelee_f
 =================
 */
-void Cmd_GetCursor_f(const idCmdArgs& args) {
-	idPlayer* player;
-	idUserInterface* cursor;
-	
-	player = gameLocal.GetLocalPlayer();
-	if (!player) {
-		gameLocal.Printf("Player not found\n");
-		return;
+void Cmd_AttackMelee_f(const idCmdArgs& args) {
+	const char* name = args.Argv(1);
+	idEntity* check;
+	int found = 0;
+	for (check = gameLocal.activeEntities.Next(); check != NULL; check = check->activeNode.Next()) {
+		if (idStr::Icmp(check->name.c_str(), name) == 0) {
+			found = 1;
+			break;
+		}
 	}
-	if (!cursor) {
-		gameLocal.Printf("Cursor not found\n");
-		return;
+	if (found) {
+		idAI* pokemon = dynamic_cast<idAI*>(check);
+		pokemon->PokemonAttackMelee();
 	}
-	cursor = player->GetCursorGUI();
-	gameLocal.Printf("cursor: (%f, %f)\n", cursor->CursorX(), cursor->CursorY());
+}
+
+/*
+=================
+Cmd_AttackRanged_f
+=================
+*/
+void Cmd_AttackRanged_f(const idCmdArgs& args) {
+	const char* name = args.Argv(1);
+	idEntity* check;
+	int found = 0;
+	for (check = gameLocal.activeEntities.Next(); check != NULL; check = check->activeNode.Next()) {
+		if (idStr::Icmp(check->name.c_str(), name) == 0) {
+			found = 1;
+			break;
+		}
+	}
+	if (found) {
+		idAI* pokemon = dynamic_cast<idAI*>(check);
+		pokemon->PokemonAttackRanged();
+	}
 }
 
 /*
@@ -3317,7 +3337,8 @@ void idGameLocal::InitConsoleCommands( void ) {
 	cmdSystem->AddCommand("exists", Cmd_Exists_f, CMD_FL_GAME, "Checks if entity defintion exists");
 	cmdSystem->AddCommand("givexp", Cmd_GiveXP_f, CMD_FL_GAME, "Gives XP to pokemon");
 	cmdSystem->AddCommand("printdets", Cmd_PrintDets_f, CMD_FL_GAME, "Prints pokemon's details");
-	cmdSystem->AddCommand("cursor", Cmd_GetCursor_f, CMD_FL_GAME, "Prints cursor location");
+	cmdSystem->AddCommand("attackmelee", Cmd_AttackMelee_f, CMD_FL_GAME, "Melee pokemon attack");
+	cmdSystem->AddCommand("attackranged", Cmd_AttackRanged_f, CMD_FL_GAME, "Ranged pokemon attack");
 
 }
 

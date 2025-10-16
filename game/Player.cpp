@@ -1673,6 +1673,7 @@ void idPlayer::Init( void ) {
 	memset ( &pfl, 0, sizeof( pfl ) );
 	pfl.onGround = true;
 	pfl.noFallingDamage = false;
+	pfl.combat = false;
 
 	// Start in idle
 	SetAnimState( ANIMCHANNEL_TORSO, "Torso_Idle", 0 );
@@ -3434,6 +3435,15 @@ void idPlayer::UpdateHudStats( idUserInterface *_hud ) {
 
 	if ( weapon ) {
 		UpdateHudAmmo( _hud );
+	}
+
+	if (pfl.combat) {
+		hud->HandleNamedEvent("showCombatOptions");
+		hud->HandleNamedEvent("showPokeHealth");
+		hud->SetStateString("pokemonhealth", "Health: 500/500");
+	} else {
+		hud->HandleNamedEvent("hideCombatOptions");
+		hud->HandleNamedEvent("hidePokeHealth");
 	}
 	
 	_hud->StateChanged( gameLocal.time );
@@ -6974,10 +6984,12 @@ void idPlayer::UpdateFocus( void ) {
 			isFriendly = (static_cast<idAI *>( ent )->team == team);
 			if (idStr::Icmp(ent->spawnArgs.GetString("classname"), "monster_pokemon_strogg_marine") == 0) {
 				idAI* pokemon = static_cast<idAI*>(ent);
-				hud->HandleNamedEvent("showPokeInfo");
-				hud->SetStateString("pokename", "Strogg Marine");
-				hud->SetStateString("pokelevel", va("Level: %d", pokemon->level));
-				hud->SetStateString("pokexp", va("XP: %d / %d", pokemon->xp, pokemon->xpToLevelUp));
+				if (!pfl.combat) {
+					hud->HandleNamedEvent("showPokeInfo");
+					hud->SetStateString("pokename", "Strogg Marine");
+					hud->SetStateString("pokelevel", va("Level: %d", pokemon->level));
+					hud->SetStateString("pokexp", va("XP: %d / %d", pokemon->xp, pokemon->xpToLevelUp));
+				}
 			} else {
 				hud->HandleNamedEvent("hidePokeInfo");
 			}

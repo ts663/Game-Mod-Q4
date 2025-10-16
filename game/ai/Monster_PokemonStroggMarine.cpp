@@ -17,6 +17,9 @@ public:
 	void				Spawn(void);
 	void				PrintDets(void);
 	void				GiveXP(int);
+	bool				DefeatedEnemy(void);
+	void				PokemonAttackMelee(void);
+	void				PokemonAttackRanged(void);
 	void				Save(idSaveGame* savefile) const;
 	void				Restore(idRestoreGame* savefile);
 
@@ -36,6 +39,8 @@ protected:
 	int					sweepCount;
 
 	bool				EnemyMovingToRight(void);
+
+	idEntity*			lastEnemy;
 
 private:
 
@@ -93,7 +98,7 @@ void rvMonsterPokemonStroggMarine::InitSpawnArgsVariables(void)
 	xp = 0;
 	level = 1;
 	xpToLevelUp = 500;
-	aifl.disableLook = true;
+	//aifl.disableLook = true;
 }
 /*
 ================
@@ -115,6 +120,10 @@ void rvMonsterPokemonStroggMarine::Spawn(void) {
 	shotsFired = 0;
 	gameLocal.Printf("Spawned pokemon strogg\n");
 	PrintDets();
+	const idDict* attackDict;
+	attackDict = gameLocal.FindEntityDefDict(spawnArgs.GetString("def_attack_melee_left", false));
+	/*AttackMelee("melee_left", attackDict);
+	gameLocal.Printf("attacked\n");*/
 }
 
 /*
@@ -137,6 +146,7 @@ rvMonsterPokemonStroggMarine::GiveXP
 ================
 */
 void rvMonsterPokemonStroggMarine::GiveXP(int amount) {
+	int orig = amount;
 	while (amount > 0) {
 		if (xp + amount >= xpToLevelUp) {
 			amount -= xpToLevelUp - xp;
@@ -149,7 +159,62 @@ void rvMonsterPokemonStroggMarine::GiveXP(int amount) {
 			amount = 0;
 		}
 	}
-	gameLocal.Printf("Gave %d XP\nNow level %d\n", amount, level);
+	gameLocal.Printf("Gave %d XP\nNow level %d\n", orig, level);
+}
+
+/*
+================
+rvMonsterPokemonStroggMarine::DefeatedEnemy
+================
+*/
+bool rvMonsterPokemonStroggMarine::DefeatedEnemy(void) {
+	if (lastEnemy) {
+		if (lastEnemy->health <= 0) {
+			return true;
+		}
+	}
+	return false;
+}
+
+/*
+================
+rvMonsterPokemonStroggMarine::PokemonAttackMelee
+================
+*/
+void rvMonsterPokemonStroggMarine::PokemonAttackMelee(void) {
+	idEntity* potential = FindEnemy(!IsBehindCover(), 0, 0.0f);
+	if (!potential) {
+		return;
+	}
+	enemy.ent = potential;
+	lastEnemy = enemy.ent;
+	gameLocal.Printf("Current enemy: %s\n", enemy.ent.GetEntity()->name.c_str());
+	combat.fl.ignoreEnemies = false;
+	PerformAction(&actionMeleeAttack, (checkAction_t)&idAI::CheckAction_MeleeAttack);
+}
+
+/*
+================
+rvMonsterPokemonStroggMarine::PokemonAttackRanged
+================
+*/
+void rvMonsterPokemonStroggMarine::PokemonAttackRanged(void) {
+	/*if (level < 2) {
+		return;
+	}*/
+	idEntity* potential = FindEnemy(!IsBehindCover(), 0, 0.0f);
+	if (!potential) {
+		return;
+	}
+	enemy.ent = potential;
+	lastEnemy = enemy.ent;
+	gameLocal.Printf("Current enemy: %s\n", enemy.ent.GetEntity()->name.c_str());
+	combat.fl.ignoreEnemies = false;
+	PerformAction(&actionRangedAttack, (checkAction_t)&idAI::CheckAction_RangedAttack, &actionTimerRangedAttack);
+	if (DefeatedEnemy()) {
+		lastEnemy = NULL;
+		GiveXP(250);
+	}
 }
 
 /*

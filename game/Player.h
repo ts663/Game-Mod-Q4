@@ -304,6 +304,8 @@ public:
 	int						lastHitTime;			// last time projectile fired by player hit target
 	int						lastSavingThrowTime;	// for the "free miss" effect
 
+	idAI*					pokemonArray[3];
+
 	struct playerFlags_s {
 		bool		forward			:1;
 		bool		backward		:1;
@@ -327,6 +329,7 @@ public:
 		bool		hearingLoss		:1;
 		bool		objectiveFailed	:1;
 		bool		noFallingDamage :1;
+		bool		combat			:1;
 	} pfl;
 		
 	// inventory

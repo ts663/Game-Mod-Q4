@@ -278,10 +278,11 @@ idAI::CheckAction_RangedAttack
 ================
 */
 bool idAI::CheckAction_RangedAttack ( rvAIAction* action, int animNum ) {
+	gameLocal.Printf("check ranged attack\n");
 	if ( !enemy.ent || !enemy.fl.inFov ) {
 		return false;
 	}
-	if ( !IsEnemyRecentlyVisible ( ) || enemy.ent->DistanceTo ( enemy.lastKnownPosition ) > 128.0f ) {
+	if ( !IsEnemyRecentlyVisible ( ) || enemy.ent->DistanceTo(enemy.lastKnownPosition) > 128.0f ) {
 		return false;
 	}
 	if ( animNum != -1 && !CanHitEnemyFromAnim( animNum ) ) {
@@ -555,8 +556,13 @@ bool idAI::PerformAction ( rvAIAction* action, bool (idAI::*condition)(rvAIActio
 		OverrideFlag ( AIFLAGOVERRIDE_NOTURN, true );
 	}
 
+	if (combat.fl.ignoreEnemies) {
+		return false;
+	}
+	gameLocal.Printf("performing action %s\n", action->state.c_str());
 	// Perform the raw action
 	PerformAction ( action->state, action->blendFrames, action->fl.noPain );
+	gameLocal.Printf("performed action\n");
 
 	// Override legs for this state?
 	if ( action->fl.overrideLegs ) {
