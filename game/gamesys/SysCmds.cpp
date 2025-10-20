@@ -1167,44 +1167,54 @@ void Cmd_PrintDets_f(const idCmdArgs& args) {
 
 /*
 =================
-Cmd_AttackMelee_f
+Cmd_Attack1_f
 =================
 */
-void Cmd_AttackMelee_f(const idCmdArgs& args) {
-	const char* name = args.Argv(1);
-	idEntity* check;
-	int found = 0;
-	for (check = gameLocal.activeEntities.Next(); check != NULL; check = check->activeNode.Next()) {
-		if (idStr::Icmp(check->name.c_str(), name) == 0) {
-			found = 1;
-			break;
-		}
+void Cmd_Attack1_f(const idCmdArgs& args) {
+	if (!gameLocal.GetLocalPlayer()->activePokemon) {
+		gameLocal.Printf("No active pokemon\n");
+		return;
 	}
-	if (found) {
-		idAI* pokemon = dynamic_cast<idAI*>(check);
-		pokemon->PokemonAttackMelee();
-	}
+	gameLocal.GetLocalPlayer()->activePokemon->Attack1();
 }
 
 /*
 =================
-Cmd_AttackRanged_f
+Cmd_Attack2_f
 =================
 */
-void Cmd_AttackRanged_f(const idCmdArgs& args) {
-	const char* name = args.Argv(1);
-	idEntity* check;
-	int found = 0;
-	for (check = gameLocal.activeEntities.Next(); check != NULL; check = check->activeNode.Next()) {
-		if (idStr::Icmp(check->name.c_str(), name) == 0) {
-			found = 1;
-			break;
-		}
+void Cmd_Attack2_f(const idCmdArgs& args) {
+	if (!gameLocal.GetLocalPlayer()->activePokemon) {
+		gameLocal.Printf("No active pokemon\n");
+		return;
 	}
-	if (found) {
-		idAI* pokemon = dynamic_cast<idAI*>(check);
-		pokemon->PokemonAttackRanged();
+	gameLocal.GetLocalPlayer()->activePokemon->Attack2();
+}
+
+/*
+=================
+Cmd_Attack3_f
+=================
+*/
+void Cmd_Attack3_f(const idCmdArgs& args) {
+	if (!gameLocal.GetLocalPlayer()->activePokemon) {
+		gameLocal.Printf("No active pokemon\n");
+		return;
 	}
+	gameLocal.GetLocalPlayer()->activePokemon->Attack3();
+}
+
+/*
+=================
+Cmd_Evolve_f
+=================
+*/
+void Cmd_Evolve_f(const idCmdArgs& args) {
+	if (!gameLocal.GetLocalPlayer()->activePokemon) {
+		gameLocal.Printf("No active pokemon\n");
+		return;
+	}
+	gameLocal.GetLocalPlayer()->activePokemon->Evolve();
 }
 
 /*
@@ -3337,8 +3347,10 @@ void idGameLocal::InitConsoleCommands( void ) {
 	cmdSystem->AddCommand("exists", Cmd_Exists_f, CMD_FL_GAME, "Checks if entity defintion exists");
 	cmdSystem->AddCommand("givexp", Cmd_GiveXP_f, CMD_FL_GAME, "Gives XP to pokemon");
 	cmdSystem->AddCommand("printdets", Cmd_PrintDets_f, CMD_FL_GAME, "Prints pokemon's details");
-	cmdSystem->AddCommand("attackmelee", Cmd_AttackMelee_f, CMD_FL_GAME, "Melee pokemon attack");
-	cmdSystem->AddCommand("attackranged", Cmd_AttackRanged_f, CMD_FL_GAME, "Ranged pokemon attack");
+	cmdSystem->AddCommand("attack1", Cmd_Attack1_f, CMD_FL_GAME, "Pokemon attack 1");
+	cmdSystem->AddCommand("attack2", Cmd_Attack2_f, CMD_FL_GAME, "Pokemon attack 2");
+	cmdSystem->AddCommand("attack3", Cmd_Attack3_f, CMD_FL_GAME, "Pokemon attack 3");
+	cmdSystem->AddCommand("evolve", Cmd_Evolve_f, CMD_FL_GAME, "Pokemon evolve");
 
 }
 

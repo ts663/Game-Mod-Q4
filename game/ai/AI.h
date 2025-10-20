@@ -445,8 +445,10 @@ public:
 	virtual void			GiveXP							( int );
 	virtual void			PrintDets						( void );
 	virtual bool			DefeatedEnemy					( void );
-	virtual void			PokemonAttackMelee				( void );
-	virtual void			PokemonAttackRanged				( void );
+	virtual void			Attack1							( void );
+	virtual void			Attack2							( void );
+	virtual void			Attack3							( void );
+	virtual void			Evolve							( void );
 
 	idEntity*				GetEnemy						( void ) const;
  	idEntity*				GetGoalEntity					( void ) const;
@@ -580,6 +582,7 @@ public:
 		bool		meleeSuperhero			:1;
 		bool		killerGuard				:1;			// Do 100 points of damage with each hit
 		bool		pokemon					:1;
+		bool		defeated				:1;
 	} aifl;
 	
 	//
@@ -1377,11 +1380,19 @@ ID_INLINE bool idAI::DefeatedEnemy(void) {
 	return false;
 }
 
-ID_INLINE void idAI::PokemonAttackMelee(void) {
+ID_INLINE void idAI::Attack1(void) {
 	return;
 }
 
-ID_INLINE void idAI::PokemonAttackRanged(void) {
+ID_INLINE void idAI::Attack2(void) {
+	return;
+}
+
+ID_INLINE void idAI::Attack3(void) {
+	return;
+}
+
+ID_INLINE void idAI::Evolve(void) {
 	return;
 }
 

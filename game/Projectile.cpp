@@ -728,6 +728,22 @@ bool idProjectile::Collide( const trace_t &collision, const idVec3 &velocity, bo
 		gameLocal.Printf("enemy: %s\n", ent->spawnArgs.GetString("classname"));
 	}*/
 
+	if (owner.GetEntity() && owner.GetEntity()->IsType(idPlayer::GetClassType())) {
+		if (ent->IsType(idAI::GetClassType())) {
+			idAI* enemyent = static_cast<idAI*>(ent);
+			const char* projName = spawnArgs.GetString("classname", "");
+			if (idStr::Icmp(projName, "projectile_emptypokeball") == 0) {
+				enemyent->Killed(this, this, 0, vec3_zero, INVALID_JOINT);
+				// give player pokeball
+				// add pokemon to list
+				if (gameLocal.GetLocalPlayer()->numPokemon < 10) {
+					gameLocal.GetLocalPlayer()->pokemonArray[gameLocal.GetLocalPlayer()->numPokemon] = {va("monster_pokemon_%s", enemyent->spawnArgs.GetString("classname")), 0, 1, 500};
+					gameLocal.GetLocalPlayer()->numPokemon++;
+				}
+			}
+		}
+	}
+
  	// just get rid of the projectile when it hits a player in noclip
  	if ( ent->IsType( idPlayer::GetClassType() ) && static_cast<idPlayer *>( ent )->noclip ) {
    		PostEventMS( &EV_Remove, 0 );
@@ -1089,14 +1105,10 @@ void idProjectile::Fizzle( void ) {
 		const char* projName = spawnArgs.GetString("classname", "");
 		if (idStr::Icmp(projName, "projectile_pokeball") == 0) {
 			launchEnd = GetEyePosition();
-			idMat3 normalMat = this->GetPhysics()->GetAxis();
-			idVec3 normal = normalMat[0];
-			idVec3 axis = normalMat[1];
-			idMat3 axisMat;
 			idDict dict;
-			dict.Set("classname", "monster_pokemon_strogg_marine");
+			dict.Set("classname", gameLocal.GetLocalPlayer()->pokemonArray[0].name);
 			dict.Set("origin", launchEnd.ToString());
-			idEntity* pokemon = NULL;
+			idEntity* pokemon;
 			gameLocal.SpawnEntityDef(dict, &pokemon);
 		}
 	}

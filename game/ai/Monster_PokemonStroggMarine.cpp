@@ -18,8 +18,9 @@ public:
 	void				PrintDets(void);
 	void				GiveXP(int);
 	bool				DefeatedEnemy(void);
-	void				PokemonAttackMelee(void);
-	void				PokemonAttackRanged(void);
+	void				Attack1(void);
+	void				Attack2(void);
+	void				Evolve(void);
 	void				Save(idSaveGame* savefile) const;
 	void				Restore(idRestoreGame* savefile);
 
@@ -98,7 +99,6 @@ void rvMonsterPokemonStroggMarine::InitSpawnArgsVariables(void)
 	xp = 0;
 	level = 1;
 	xpToLevelUp = 500;
-	//aifl.disableLook = true;
 }
 /*
 ================
@@ -113,6 +113,7 @@ void rvMonsterPokemonStroggMarine::Spawn(void) {
 	actionAngry.Init(spawnArgs, "action_angry", NULL, 0);
 	actionReload.Init(spawnArgs, "action_reload", NULL, 0);
 	team = gameLocal.GetLocalPlayer()->team;
+	gameLocal.GetLocalPlayer()->activePokemon = this;
 
 	InitSpawnArgsVariables();
 
@@ -120,10 +121,6 @@ void rvMonsterPokemonStroggMarine::Spawn(void) {
 	shotsFired = 0;
 	gameLocal.Printf("Spawned pokemon strogg\n");
 	PrintDets();
-	const idDict* attackDict;
-	attackDict = gameLocal.FindEntityDefDict(spawnArgs.GetString("def_attack_melee_left", false));
-	/*AttackMelee("melee_left", attackDict);
-	gameLocal.Printf("attacked\n");*/
 }
 
 /*
@@ -137,6 +134,7 @@ void rvMonsterPokemonStroggMarine::PrintDets(void) {
 	gameLocal.Printf("XP: %d\n", xp);
 	gameLocal.Printf("Level: %d\n", level);
 	gameLocal.Printf("XP to level up: %d\n", xpToLevelUp);
+	gameLocal.Printf("Player's active pokemon: %s\n", gameLocal.GetLocalPlayer()->activePokemon->name.c_str());
 	gameLocal.Printf("--------------------------------------\n");
 }
 
@@ -170,6 +168,7 @@ rvMonsterPokemonStroggMarine::DefeatedEnemy
 bool rvMonsterPokemonStroggMarine::DefeatedEnemy(void) {
 	if (lastEnemy) {
 		if (lastEnemy->health <= 0) {
+			lastEnemy = NULL;
 			return true;
 		}
 	}
@@ -178,11 +177,11 @@ bool rvMonsterPokemonStroggMarine::DefeatedEnemy(void) {
 
 /*
 ================
-rvMonsterPokemonStroggMarine::PokemonAttackMelee
+rvMonsterPokemonStroggMarine::Attack1
 ================
 */
-void rvMonsterPokemonStroggMarine::PokemonAttackMelee(void) {
-	idEntity* potential = FindEnemy(!IsBehindCover(), 0, 0.0f);
+void rvMonsterPokemonStroggMarine::Attack1(void) {
+	/*idEntity* potential = FindEnemy(!IsBehindCover(), 0, 0.0f);
 	if (!potential) {
 		return;
 	}
@@ -190,31 +189,63 @@ void rvMonsterPokemonStroggMarine::PokemonAttackMelee(void) {
 	lastEnemy = enemy.ent;
 	gameLocal.Printf("Current enemy: %s\n", enemy.ent.GetEntity()->name.c_str());
 	combat.fl.ignoreEnemies = false;
-	PerformAction(&actionMeleeAttack, (checkAction_t)&idAI::CheckAction_MeleeAttack);
+	PerformAction(&actionMeleeAttack, (checkAction_t)&idAI::CheckAction_MeleeAttack);*/
+	PlayAnim(ANIMCHANNEL_LEGS, "melee_attack3", 4);
+	/*int timeToCompare = gameLocal.time;
+	while (gameLocal.time - timeToCompare < 5000) {
+		continue;
+	}
+	gameLocal.Printf("%d\n", gameLocal.time - timeToCompare);
+	gameLocal.Printf("timer done\n");
+	SetAnimState(ANIMCHANNEL_TORSO, "State_Combat", 4);
+	aifl.action = true;
+	PostAnimState(ANIMCHANNEL_TORSO, "Torso_FinishAction", 0, 0, SFLAG_ONCLEAR);
+	PostAnimState(ANIMCHANNEL_TORSO, "Torso_Idle", actionRangedAttack.blendFrames);*/
 }
 
 /*
 ================
-rvMonsterPokemonStroggMarine::PokemonAttackRanged
+rvMonsterPokemonStroggMarine::Attack2
 ================
 */
-void rvMonsterPokemonStroggMarine::PokemonAttackRanged(void) {
+void rvMonsterPokemonStroggMarine::Attack2(void) {
 	/*if (level < 2) {
 		return;
 	}*/
-	idEntity* potential = FindEnemy(!IsBehindCover(), 0, 0.0f);
-	if (!potential) {
+	if (idStr::Icmp(spawnArgs.GetString("classname"), "monster_pokemon_strogg_marine_sgun") == 0) {
+		PlayAnim(ANIMCHANNEL_LEGS, "shotgun_range_attack", 4);
+	} else {
+		SetAnimState(ANIMCHANNEL_TORSO, "Torso_RangedAttack", actionRangedAttack.blendFrames);
+		aifl.action = true;
+		PostAnimState(ANIMCHANNEL_TORSO, "Torso_FinishAction", 0, 0, SFLAG_ONCLEAR);
+		PostAnimState(ANIMCHANNEL_TORSO, "Torso_Idle", actionRangedAttack.blendFrames);
+	}
+}
+
+/*
+================
+rvMonsterPokemonStroggMarine::Evolve
+================
+*/
+void rvMonsterPokemonStroggMarine::Evolve(void) {
+	/*if (level < 3) {
+		return;
+	}*/
+	idVec3 pos = GetEyePosition();
+	if (idStr::Icmp(spawnArgs.GetString("classname"), "monster_pokemon_strogg_marine_mgun") == 0) {
 		return;
 	}
-	enemy.ent = potential;
-	lastEnemy = enemy.ent;
-	gameLocal.Printf("Current enemy: %s\n", enemy.ent.GetEntity()->name.c_str());
-	combat.fl.ignoreEnemies = false;
-	PerformAction(&actionRangedAttack, (checkAction_t)&idAI::CheckAction_RangedAttack, &actionTimerRangedAttack);
-	if (DefeatedEnemy()) {
-		lastEnemy = NULL;
-		GiveXP(250);
+	Killed(this, this, 0, vec3_zero, INVALID_JOINT);
+	idDict dict;
+	dict.Set("classname", gameLocal.GetLocalPlayer()->pokemonArray[0].name);
+	dict.Set("origin", pos.ToString());
+	if (idStr::Icmp(spawnArgs.GetString("classname"), "monster_pokemon_strogg_marine") == 0) {
+		dict.Set("classname", "monster_pokemon_strogg_marine_sgun");
+	} else {
+		dict.Set("classname", "monster_pokemon_strogg_marine_mgun");
 	}
+	idEntity* pokemon;
+	gameLocal.SpawnEntityDef(dict, &pokemon);
 }
 
 /*

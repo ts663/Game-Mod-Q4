@@ -143,6 +143,8 @@ idAI::idAI ( void ) {
 	xp				= 0;
 	level			= 1;
 	xpToLevelUp		= 500;
+
+	srand(time(0));
 }
 
 /*
@@ -1759,6 +1761,15 @@ void idAI::Killed( idEntity *inflictor, idEntity *attacker, int damage, const id
 		}
 		kv = spawnArgs.MatchPrefix( "def_drops", kv );
 	}
+	if (aifl.pokemon) {
+		gameLocal.GetLocalPlayer()->activePokemon = NULL;
+		if (gameLocal.GetLocalPlayer()->numPokemon < 10) {
+			gameLocal.GetLocalPlayer()->pokemonArray[gameLocal.GetLocalPlayer()->numPokemon] = {spawnArgs.GetString("classname"), xp, level, xpToLevelUp};
+			gameLocal.GetLocalPlayer()->numPokemon++;
+		}
+	} else {
+		gameLocal.GetLocalPlayer()->activeEnemy = NULL;
+	}
 }
 
 /***********************************************************************
@@ -2665,15 +2676,6 @@ idProjectile* idAI::AttackRanged (
 	if ( enemy.ent && enemy.ent->IsType ( idAI::GetClassType() ) ) {
 		static_cast<idAI*>(enemy.ent.GetEntity())->ReactToShotAt ( this, muzzleOrigin, axis[0] );
 	}
-	gameLocal.Printf("Ranged attack [%s] in AI.cpp\n", attackName);
-	if (aifl.pokemon) {
-		combat.fl.ignoreEnemies = true;
-		enemy.ent = NULL;
-		if (DefeatedEnemy()) {
-			gameLocal.GetLocalPlayer()->pfl.combat = false;
-			GiveXP(250);
-		}
-	}
 
 	return lastProjectile;
 }
@@ -2902,14 +2904,6 @@ bool idAI::AttackMelee ( const char *attackName, const idDict* meleeDict ) {
 
 	lastAttackTime = gameLocal.time;
 
-	if (aifl.pokemon) {
-		combat.fl.ignoreEnemies = true;
-		enemy.ent = NULL;
-		if (DefeatedEnemy()) {
-			gameLocal.GetLocalPlayer()->pfl.combat = false;
-			GiveXP(250);
-		}
-	}
 	return true;
 }
 
@@ -3431,8 +3425,9 @@ void idAI::OnTouch( idEntity *other, trace_t *trace ) {
 	pusher = other;
 	aifl.pushed = true;
 
-	if (other && other->IsType(idPlayer::GetClassType())) {
+	if (!aifl.pokemon && other && other->IsType(idPlayer::GetClassType())) {
 		gameLocal.GetLocalPlayer()->pfl.combat = true;
+		gameLocal.GetLocalPlayer()->activeEnemy = this;
 	}
 	
 	// If pushed by the player update tactical

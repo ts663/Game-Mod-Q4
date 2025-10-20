@@ -14,6 +14,12 @@ public:
 
 	void					InitSpawnArgsVariables(void);
 	void					Spawn(void);
+	void					PrintDets(void);
+	void					GiveXP(int);
+	bool					DefeatedEnemy(void);
+	void					Attack1(void);
+	void					Attack2(void);
+	void					Attack3(void);
 	void					Save(idSaveGame* savefile) const;
 	void					Restore(idRestoreGame* savefile);
 
@@ -80,6 +86,8 @@ private:
 
 	rvScriptFuncUtility		mPostWeaponDestroyed;		// script to run after railgun is destroyed
 
+	idEntity* lastEnemy;
+
 	CLASS_STATES_PROTOTYPE(rvMonsterPokemonGladiator);
 };
 
@@ -128,6 +136,9 @@ void rvMonsterPokemonGladiator::Spawn(void) {
 
 	actionRailgunAttack.Init(spawnArgs, "action_railgunAttack", "Torso_RailgunAttack", AIACTIONF_ATTACK);
 
+	team = gameLocal.GetLocalPlayer()->team;
+	gameLocal.GetLocalPlayer()->activePokemon = this;
+
 	// Disable range attack until using shield	
 	//actionRangedAttack.fl.disabled = true;
 	const char* func;
@@ -135,6 +146,97 @@ void rvMonsterPokemonGladiator::Spawn(void) {
 	{
 		mPostWeaponDestroyed.Init(func);
 	}
+
+	gameLocal.Printf("Spawned pokemon gladiator\n");
+	PrintDets();
+}
+
+/*
+================
+rvMonsterPokemonGladiator::PrintDets
+================
+*/
+void rvMonsterPokemonGladiator::PrintDets(void) {
+	gameLocal.Printf("--------------------------------------\n");
+	gameLocal.Printf("%s\n", name.c_str());
+	gameLocal.Printf("XP: %d\n", xp);
+	gameLocal.Printf("Level: %d\n", level);
+	gameLocal.Printf("XP to level up: %d\n", xpToLevelUp);
+	gameLocal.Printf("Player's active pokemon: %s\n", gameLocal.GetLocalPlayer()->activePokemon->name.c_str());
+	gameLocal.Printf("--------------------------------------\n");
+}
+
+/*
+================
+rvMonsterPokemonGladiator::GiveXP
+================
+*/
+void rvMonsterPokemonGladiator::GiveXP(int amount) {
+	int orig = amount;
+	while (amount > 0) {
+		if (xp + amount >= xpToLevelUp) {
+			amount -= xpToLevelUp - xp;
+			xp = 0;
+			level++;
+			xpToLevelUp *= 1.5;
+		}
+		else {
+			xp += amount;
+			amount = 0;
+		}
+	}
+	gameLocal.Printf("Gave %d XP\nNow level %d\n", orig, level);
+}
+
+/*
+================
+rvMonsterPokemonGladiator::DefeatedEnemy
+================
+*/
+bool rvMonsterPokemonGladiator::DefeatedEnemy(void) {
+	if (lastEnemy) {
+		if (lastEnemy->health <= 0) {
+			lastEnemy = NULL;
+			return true;
+		}
+	}
+	return false;
+}
+
+/*
+================
+rvMonsterPokemonGladiator::Attack1
+================
+*/
+void rvMonsterPokemonGladiator::Attack1(void) {
+	PlayAnim(ANIMCHANNEL_LEGS, "melee_attack", 4);
+}
+
+/*
+================
+rvMonsterPokemonGladiator::Attack2
+================
+*/
+void rvMonsterPokemonGladiator::Attack2(void) {
+	/*if (level < 2) {
+		return;
+	}*/
+	SetAnimState(ANIMCHANNEL_TORSO, "Torso_BlasterAttack", actionRangedAttack.blendFrames);
+	aifl.action = true;
+	PostAnimState(ANIMCHANNEL_TORSO, "Torso_FinishAction", 0, 0, SFLAG_ONCLEAR);
+	PostAnimState(ANIMCHANNEL_TORSO, "Torso_Idle", actionRangedAttack.blendFrames);
+}
+
+/*
+================
+rvMonsterPokemonGladiator::Attack3
+================
+*/
+void rvMonsterPokemonGladiator::Attack3(void) {
+	/*if (level < 3) {
+		return;
+	}*/
+	PlayAnim(ANIMCHANNEL_LEGS, "railgun_attack3", 4);
 }
 
 /*

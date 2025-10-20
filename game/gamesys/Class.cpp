@@ -1360,7 +1360,14 @@ void idClass::RegisterClasses( void )
 	REGISTER(rvMonsterIronMaiden); // ..\..\code\game\ai\Monster_IronMaiden.cpp
 	REGISTER(rvMonsterLightTank); // ..\..\code\game\ai\Monster_LightTank.cpp
 	REGISTER(rvMonsterNetworkGuardian); // ..\..\code\game\ai\Monster_NetworkGuardian.cpp
-	REGISTER(rvMonsterPokemonStroggMarine);// ..\..\game\ai\Monster_PokemonStroggMarine.cpp
+	REGISTER(rvMonsterPokemonStroggMarine); // ..\..\game\ai\Monster_PokemonStroggMarine.cpp
+	REGISTER(rvMonsterPokemonGladiator); // ..\..\game\ai\Monster_PokemonGladiator.cpp
+	REGISTER(rvMonsterPokemonGunner); // ..\..\game\ai\Monster_PokemonGunner.cpp
+	REGISTER(rvMonsterPokemonIronMaiden); // ..\..\game\ai\Monster_PokemonIronMaiden.cpp
+	REGISTER(rvMonsterPokemonGrunt); // ..\..\game\ai\Monster_PokemonGrunt.cpp
+	REGISTER(rvMonsterPokemonBossBuddy); // ..\..\game\ai\Monster_PokemonBossBuddy.cpp
+	REGISTER(rvMonsterPokemonBossMakron); // ..\..\game\ai\Monster_PokemonBossMakron.cpp
+	REGISTER(rvMonsterPokemonBerserker); // ..\..\game\ai\Monster_PokemonBerserker.cpp
 	REGISTER(rvMonsterRepairBot); // ..\..\code\game\ai\Monster_RepairBot.cpp
 	REGISTER(rvMonsterScientist); // ..\..\code\game\ai\Monster_Scientist.cpp
 	REGISTER(rvMonsterSentry); // ..\..\code\game\ai\Monster_Sentry.cpp
@@ -1422,6 +1429,7 @@ void idClass::RegisterClasses( void )
 	REGISTER(rvWeaponMachinegun); // ..\..\code\game\weapon\WeaponMachinegun.cpp
 	REGISTER(rvWeaponNailgun); // ..\..\code\game\weapon\WeaponNailgun.cpp
 	REGISTER(rvWeaponPokeballLauncher); // ..\..\code\game\weapon\WeaponPokeballLauncher.cpp
+	REGISTER(rvWeaponEmptyPokeballLauncher); // ..\..\code\game\weapon\WeaponEmptyPokeballLauncher.cpp
 	REGISTER(rvWeaponRailgun); // ..\..\code\game\weapon\WeaponRailgun.cpp
 	REGISTER(rvWeaponRocketLauncher); // ..\..\code\game\weapon\WeaponRocketLauncher.cpp
 	REGISTER(rvWeaponShotgun); // ..\..\code\game\weapon\WeaponShotgun.cpp

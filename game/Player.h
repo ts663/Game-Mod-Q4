@@ -304,7 +304,16 @@ public:
 	int						lastHitTime;			// last time projectile fired by player hit target
 	int						lastSavingThrowTime;	// for the "free miss" effect
 
-	idAI*					pokemonArray[3];
+	struct pokemonDets {
+		const char* name;
+		int xp;
+		int level;
+		int xpToLevelUp;
+	};
+	pokemonDets				pokemonArray[10];
+	int						numPokemon;
+	idAI*					activePokemon;
+	idAI*					activeEnemy;
 
 	struct playerFlags_s {
 		bool		forward			:1;
