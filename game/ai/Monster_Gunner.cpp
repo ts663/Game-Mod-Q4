@@ -13,6 +13,8 @@ public:
 
 	void				InitSpawnArgsVariables			( void );
 	void				Spawn							( void );
+	void				Attack1							( void );
+	void				Attack2							( void );
 	void				Save							( idSaveGame *savefile ) const;
 	void				Restore							( idRestoreGame *savefile );
 
@@ -79,6 +81,7 @@ void rvMonsterGunner::InitSpawnArgsVariables( void )
 	nailgunMaxShots = spawnArgs.GetInt ( "action_nailgunAttack_maxshots", "20" );
 	attackRate = SEC2MS( spawnArgs.GetFloat( "attackRate", "0.3" ) );
 	attackJoint = animator.GetJointHandle( spawnArgs.GetString( "attackJoint", "muzzle" ) );
+	defeatXp = 1000;
 }
 /*
 ================
@@ -93,6 +96,46 @@ void rvMonsterGunner::Spawn ( void ) {
 	actionTimerSideStep.Init ( spawnArgs, "actionTimer_sideStep" );
 	
 	InitSpawnArgsVariables();
+}
+
+/*
+================
+rvMonsterGunner::Attack1
+================
+*/
+void rvMonsterGunner::Attack1(void) {
+	idAI* enemy = gameLocal.GetLocalPlayer()->activePokemon;
+	if (!enemy) {
+		return;
+	}
+	TurnToward(enemy->GetEyePosition());
+	PlayAnim(ANIMCHANNEL_LEGS, "melee_attack1", 4);
+	enemy->health -= 15 - (15 * enemy->nullify);
+	enemy->nullify = 0;
+	enemy->aifl.turn = 1;
+	if (enemy->health <= 0) {
+		enemy->Killed(this, this, 0, vec3_zero, INVALID_JOINT);
+	}
+}
+
+/*
+================
+rvMonsterGunner::Attack2
+================
+*/
+void rvMonsterGunner::Attack2(void) {
+	idAI* enemy = gameLocal.GetLocalPlayer()->activePokemon;
+	if (!enemy) {
+		return;
+	}
+	TurnToward(enemy->GetEyePosition());
+	PlayAnim(ANIMCHANNEL_LEGS, "range_attack1", 4);
+	enemy->health -= 20 - (20 * enemy->nullify);
+	enemy->nullify = 0;
+	enemy->aifl.turn = 1;
+	if (enemy->health <= 0) {
+		enemy->Killed(this, this, 0, vec3_zero, INVALID_JOINT);
+	}
 }
 
 /*

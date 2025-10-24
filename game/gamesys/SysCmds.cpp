@@ -1175,7 +1175,17 @@ void Cmd_Attack1_f(const idCmdArgs& args) {
 		gameLocal.Printf("No active pokemon\n");
 		return;
 	}
-	gameLocal.GetLocalPlayer()->activePokemon->Attack1();
+	idAI* pok = gameLocal.GetLocalPlayer()->activePokemon;
+	if (gameLocal.GetLocalPlayer()->itemMenu) {
+		if (gameLocal.GetLocalPlayer()->powerHerbs > 0) {
+			pok->secondTurn = 1;
+			gameLocal.GetLocalPlayer()->powerHerbs --;
+			gameLocal.GetLocalPlayer()->hud->HandleNamedEvent("toggleItems");
+			gameLocal.GetLocalPlayer()->itemMenu = !gameLocal.GetLocalPlayer()->itemMenu;
+		}
+		return;
+	}
+	pok->Attack1();
 }
 
 /*
@@ -1188,7 +1198,17 @@ void Cmd_Attack2_f(const idCmdArgs& args) {
 		gameLocal.Printf("No active pokemon\n");
 		return;
 	}
-	gameLocal.GetLocalPlayer()->activePokemon->Attack2();
+	idAI* pok = gameLocal.GetLocalPlayer()->activePokemon;
+	if (gameLocal.GetLocalPlayer()->itemMenu) {
+		if (gameLocal.GetLocalPlayer()->shields > 0) {
+			pok->nullify = 1;
+			gameLocal.GetLocalPlayer()->shields --;
+			gameLocal.GetLocalPlayer()->hud->HandleNamedEvent("toggleItems");
+			gameLocal.GetLocalPlayer()->itemMenu = !gameLocal.GetLocalPlayer()->itemMenu;
+		}
+		return;
+	}
+	pok->Attack2();
 }
 
 /*
@@ -1201,20 +1221,109 @@ void Cmd_Attack3_f(const idCmdArgs& args) {
 		gameLocal.Printf("No active pokemon\n");
 		return;
 	}
-	gameLocal.GetLocalPlayer()->activePokemon->Attack3();
+	idAI* pok = gameLocal.GetLocalPlayer()->activePokemon;
+	if (gameLocal.GetLocalPlayer()->itemMenu) {
+		if (gameLocal.GetLocalPlayer()->blackBelts > 0) {
+			pok->amplify = 1;
+			gameLocal.GetLocalPlayer()->blackBelts --;
+			gameLocal.GetLocalPlayer()->hud->HandleNamedEvent("toggleItems");
+			gameLocal.GetLocalPlayer()->itemMenu = !gameLocal.GetLocalPlayer()->itemMenu;
+		}
+		return;
+	}
+	if (idStr::Icmp(pok->spawnArgs.GetString("classname"), "monster_pokemon_strogg_marine") == 0 || idStr::Icmp(pok->spawnArgs.GetString("classname"), "monster_pokemon_berserker") == 0 || idStr::Icmp(pok->spawnArgs.GetString("classname"), "monster_pokemon_strogg_marine_sgun") == 0 || idStr::Icmp(pok->spawnArgs.GetString("classname"), "monster_pokemon_strogg_marine_mgun") == 0 || idStr::Icmp(pok->spawnArgs.GetString("classname"), "monster_pokemon_iron_maiden") == 0 || idStr::Icmp(pok->spawnArgs.GetString("classname"), "monster_pokemon_grunt") == 0) {
+		pok->Heal();
+	} else {
+		pok->Attack3();
+	}
 }
 
 /*
 =================
-Cmd_Evolve_f
+Cmd_Option4_f
 =================
 */
-void Cmd_Evolve_f(const idCmdArgs& args) {
+void Cmd_Option4_f(const idCmdArgs& args) {
 	if (!gameLocal.GetLocalPlayer()->activePokemon) {
 		gameLocal.Printf("No active pokemon\n");
 		return;
 	}
-	gameLocal.GetLocalPlayer()->activePokemon->Evolve();
+	idAI* pok = gameLocal.GetLocalPlayer()->activePokemon;
+	if (gameLocal.GetLocalPlayer()->itemMenu) {
+		if (gameLocal.GetLocalPlayer()->lifeOrbs > 0) {
+			pok->health = pok->maxHealth;
+			gameLocal.GetLocalPlayer()->lifeOrbs --;
+			gameLocal.GetLocalPlayer()->hud->HandleNamedEvent("toggleItems");
+			gameLocal.GetLocalPlayer()->itemMenu = !gameLocal.GetLocalPlayer()->itemMenu;
+		}
+		return;
+	}
+	if (idStr::Icmp(pok->spawnArgs.GetString("classname"), "monster_pokemon_strogg_marine") == 0 || idStr::Icmp(pok->spawnArgs.GetString("classname"), "monster_pokemon_berserker") == 0 || idStr::Icmp(pok->spawnArgs.GetString("classname"), "monster_pokemon_strogg_marine_sgun") == 0 || idStr::Icmp(pok->spawnArgs.GetString("classname"), "monster_pokemon_strogg_marine_mgun") == 0 || idStr::Icmp(pok->spawnArgs.GetString("classname"), "monster_pokemon_iron_maiden") == 0 || idStr::Icmp(pok->spawnArgs.GetString("classname"), "monster_pokemon_grunt") == 0) {
+		pok->Flee();
+	} else {
+		pok->Heal();
+	}
+}
+
+/*
+=================
+Cmd_Option5_f
+=================
+*/
+void Cmd_Option5_f(const idCmdArgs& args) {
+	if (!gameLocal.GetLocalPlayer()->activePokemon) {
+		gameLocal.Printf("No active pokemon\n");
+		return;
+	}
+	idAI* pok = gameLocal.GetLocalPlayer()->activePokemon;
+	if (gameLocal.GetLocalPlayer()->itemMenu) {
+		if (gameLocal.GetLocalPlayer()->rareCandies > 0) {
+			pok->level++;
+			pok->xp = 0;
+			pok->xpToLevelUp *= 1.5;
+			pok->maxHealth *= 1.5;
+			pok->health = pok->maxHealth;
+			gameLocal.GetLocalPlayer()->rareCandies --;
+			gameLocal.GetLocalPlayer()->hud->HandleNamedEvent("toggleItems");
+			gameLocal.GetLocalPlayer()->itemMenu = !gameLocal.GetLocalPlayer()->itemMenu;
+		}
+		return;
+	}
+	if (idStr::Icmp(pok->spawnArgs.GetString("classname"), "monster_pokemon_strogg_marine") == 0 || idStr::Icmp(pok->spawnArgs.GetString("classname"), "monster_pokemon_strogg_marine_sgun") == 0) {
+		pok->Evolve();
+	}
+	else if (idStr::Icmp(pok->spawnArgs.GetString("classname"), "monster_pokemon_gladiator") == 0 || idStr::Icmp(pok->spawnArgs.GetString("classname"), "monster_pokemon_gunner") == 0 || idStr::Icmp(pok->spawnArgs.GetString("classname"), "monster_pokemon_bossbuddy") == 0 || idStr::Icmp(pok->spawnArgs.GetString("classname"), "monster_pokemon_makron") == 0) {
+		pok->Flee();
+	}
+}
+
+/*
+=================
+Cmd_Items_f
+=================
+*/
+void Cmd_Items_f(const idCmdArgs& args) {
+	if (!gameLocal.GetLocalPlayer()->hud || !gameLocal.GetLocalPlayer()->pfl.combat) {
+		return;
+	}
+	gameLocal.GetLocalPlayer()->hud->HandleNamedEvent("toggleItems");
+	gameLocal.GetLocalPlayer()->itemMenu = !gameLocal.GetLocalPlayer()->itemMenu;
+}
+
+/*
+=================
+Cmd_Locate_f
+=================
+*/
+void Cmd_Locate_f(const idCmdArgs& args) {
+	gameLocal.Printf("%s\n", gameLocal.GetLocalPlayer()->GetEyePosition().ToString());
+}
+
+void Cmd_SomeCommand_f(const idCmdArgs& args) {
+	if (!gameLocal.GetLocalPlayer()->hud || gameLocal.GetLocalPlayer()->pfl.combat) {
+		return;
+	}
+	gameLocal.GetLocalPlayer()->hud->HandleNamedEvent("toggleHelpMenu");
 }
 
 /*
@@ -3350,7 +3459,12 @@ void idGameLocal::InitConsoleCommands( void ) {
 	cmdSystem->AddCommand("attack1", Cmd_Attack1_f, CMD_FL_GAME, "Pokemon attack 1");
 	cmdSystem->AddCommand("attack2", Cmd_Attack2_f, CMD_FL_GAME, "Pokemon attack 2");
 	cmdSystem->AddCommand("attack3", Cmd_Attack3_f, CMD_FL_GAME, "Pokemon attack 3");
-	cmdSystem->AddCommand("evolve", Cmd_Evolve_f, CMD_FL_GAME, "Pokemon evolve");
+	cmdSystem->AddCommand("option4", Cmd_Option4_f, CMD_FL_GAME, "Pokemon option 4");
+	cmdSystem->AddCommand("option5", Cmd_Option5_f, CMD_FL_GAME, "Pokemon option 5");
+	cmdSystem->AddCommand("items", Cmd_Items_f, CMD_FL_GAME, "Toggle items menu");
+	cmdSystem->AddCommand("locate", Cmd_Locate_f, CMD_FL_GAME, "Prints player coordinates");
+	cmdSystem->AddCommand("somecommand", Cmd_SomeCommand_f, CMD_FL_GAME, "Just a command");
+
 
 }
 

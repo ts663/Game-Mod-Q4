@@ -12,6 +12,8 @@ public:
 	rvMonsterGrunt ( void );
 	
 	void				Spawn					( void );
+	void				Attack1					( void );
+	void				Attack2					( void );
 	void				Save					( idSaveGame *savefile ) const;
 	void				Restore					( idRestoreGame *savefile );
 	
@@ -72,6 +74,50 @@ void rvMonsterGrunt::Spawn ( void ) {
 	if ( spawnArgs.GetBool ( "preinject" ) ) {
 		RageStart ( );
 	}	
+	defeatXp = 850;
+}
+
+/*
+================
+rvMonsterGrunt::Attack1
+================
+*/
+void rvMonsterGrunt::Attack1(void) {
+	idAI* enemy = gameLocal.GetLocalPlayer()->activePokemon;
+	if (!enemy) {
+		return;
+	}
+	if (!aifl.turn) {
+		return;
+	}
+	TurnToward(enemy->GetEyePosition());
+	PlayAnim(ANIMCHANNEL_LEGS, "melee_attack1", 4);
+	enemy->health -= 10 - (10 * enemy->nullify);
+	enemy->nullify = 0;
+	enemy->aifl.turn = 1;
+	if (enemy->health <= 0) {
+		enemy->Killed(this, this, 0, vec3_zero, INVALID_JOINT);
+	}
+}
+
+/*
+================
+rvMonsterGrunt::Attack2
+================
+*/
+void rvMonsterGrunt::Attack2(void) {
+	idAI* enemy = gameLocal.GetLocalPlayer()->activePokemon;
+	if (!enemy) {
+		return;
+	}
+	TurnToward(enemy->GetEyePosition());
+	PlayAnim(ANIMCHANNEL_LEGS, "range_attack", 4);
+	enemy->health -= 15 - (15 * enemy->nullify);
+	enemy->nullify = 0;
+	enemy->aifl.turn = 1;
+	if (enemy->health <= 0) {
+		enemy->Killed(this, this, 0, vec3_zero, INVALID_JOINT);
+	}
 }
 
 /*

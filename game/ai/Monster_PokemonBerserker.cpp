@@ -16,9 +16,10 @@ public:
 	void				Spawn(void);
 	void				PrintDets(void);
 	void				GiveXP(int);
-	bool				DefeatedEnemy(void);
 	void				Attack1(void);
 	void				Attack2(void);
+	void				Heal(void);
+	void				Think(void);
 	void				Save(idSaveGame* savefile) const;
 	void				Restore(idRestoreGame* savefile);
 
@@ -32,6 +33,9 @@ protected:
 	virtual bool		CheckActions(void);
 	int					FilterTactical(int availableTactical);
 	virtual void		OnTacticalChange(aiTactical_t oldTactical);
+
+	bool				waitingforattack;
+	int					damagetodeal;
 
 private:
 
@@ -56,8 +60,6 @@ private:
 	// Frame commands
 	stateResult_t		Frame_ChargeGroundImpact(const stateParms_t& parms);
 	stateResult_t		Frame_DoBlastAttack(const stateParms_t& parms);
-
-	idEntity* lastEnemy;
 
 	CLASS_STATES_PROTOTYPE(rvMonsterPokemonBerserker);
 };
@@ -87,9 +89,18 @@ void rvMonsterPokemonBerserker::Spawn(void) {
 	PlayEffect("fx_ambient_electricity_mace", animator.GetJointHandle("chain9"), true);
 	team = gameLocal.GetLocalPlayer()->team;
 	gameLocal.GetLocalPlayer()->activePokemon = this;
-	xp = 0;
-	level = 1;
-	xpToLevelUp = 500;
+	xp = gameLocal.GetLocalPlayer()->pokemonArray.StackTop().xp;
+	level = gameLocal.GetLocalPlayer()->pokemonArray.StackTop().level;
+	xpToLevelUp = gameLocal.GetLocalPlayer()->pokemonArray.StackTop().xpToLevelUp;
+	double pow = 1.0;
+	for (int i = 1; i < level; i++) {
+		pow *= 1.5;
+	}
+	maxHealth *= pow;
+	health = maxHealth;
+	gameLocal.Printf("Spawned pokemon berserker\n");
+	PrintDets();
+	gameLocal.GetLocalPlayer()->pokemonArray.StackPop();
 }
 
 /*
@@ -122,6 +133,8 @@ void rvMonsterPokemonBerserker::GiveXP(int amount) {
 			xp = 0;
 			level++;
 			xpToLevelUp *= 1.5;
+			maxHealth *= 1.5;
+			health = maxHealth;
 		}
 		else {
 			xp += amount;
@@ -133,26 +146,29 @@ void rvMonsterPokemonBerserker::GiveXP(int amount) {
 
 /*
 ================
-rvMonsterPokemonBerserker::DefeatedEnemy
-================
-*/
-bool rvMonsterPokemonBerserker::DefeatedEnemy(void) {
-	if (lastEnemy) {
-		if (lastEnemy->health <= 0) {
-			lastEnemy = NULL;
-			return true;
-		}
-	}
-	return false;
-}
-
-/*
-================
 rvMonsterPokemonBerserker::Attack1
 ================
 */
 void rvMonsterPokemonBerserker::Attack1(void) {
+	idAI* enemy = gameLocal.GetLocalPlayer()->activeEnemy;
+	if (!enemy) {
+		return;
+	}
+	if (!aifl.turn) {
+		return;
+	}
+	TurnToward(enemy->GetEyePosition());
 	PlayAnim(ANIMCHANNEL_LEGS, "melee_attack4", 4);
+	waitingforattack = true;
+	double pow = 1.0;
+	for (int i = 1; i < level; i++) {
+		pow *= 1.5;
+	}
+	damagetodeal = 20 * pow;
+	damagetodeal += damagetodeal * amplify;
+	if (!secondTurn) {
+		aifl.turn = 0;
+	}
 }
 
 /*
@@ -161,10 +177,108 @@ rvMonsterPokemonBerserker::Attack2
 ================
 */
 void rvMonsterPokemonBerserker::Attack2(void) {
-	/*if (level < 2) {
+	idAI* enemy = gameLocal.GetLocalPlayer()->activeEnemy;
+	if (!enemy) {
 		return;
-	}*/
+	}
+	if (!aifl.turn) {
+		return;
+	}
+	if (level < 2) {
+		return;
+	}
+	TurnToward(enemy->GetEyePosition());
 	PlayAnim(ANIMCHANNEL_LEGS, "ranged_attack", 4);
+	waitingforattack = true;
+	double pow = 1.0;
+	for (int i = 1; i < level; i++) {
+		pow *= 1.5;
+	}
+	damagetodeal = 30 * pow;
+	damagetodeal += damagetodeal * amplify;
+	if (!secondTurn) {
+		aifl.turn = 0;
+	}
+}
+
+/*
+================
+rvMonsterPokemonBerserker::Heal
+================
+*/
+void rvMonsterPokemonBerserker::Heal(void) {
+	idAI* enemy = gameLocal.GetLocalPlayer()->activeEnemy;
+	if (!enemy) {
+		return;
+	}
+	if (!aifl.turn) {
+		return;
+	}
+	health += maxHealth / 2;
+	if (health > maxHealth) {
+		health = maxHealth;
+	}
+	if (!secondTurn) {
+		aifl.turn = 0;
+	}
+	int attack = rand() % 2;
+	if (!attack) {
+		enemy->Attack1();
+	} else {
+		enemy->Attack2();
+	}
+}
+
+/*
+================
+rvMonsterPokemonBerserker::Think
+================
+*/
+void rvMonsterPokemonBerserker::Think(void) {
+	idAI::Think();
+
+	if (waitingforattack && AnimDone(ANIMCHANNEL_LEGS, 0)) {
+		waitingforattack = false;
+		amplify = 0;
+		idAI* enemy = gameLocal.GetLocalPlayer()->activeEnemy;
+		if (enemy) {
+			enemy->health -= damagetodeal;
+			if (enemy->health <= 0) {
+				enemy->aifl.defeated = 1;
+				health = maxHealth;
+				gameLocal.GetLocalPlayer()->pfl.combat = false;
+				GiveXP(enemy->defeatXp);
+				int randItem = rand() % 5;
+				if (randItem == 0) {
+					gameLocal.GetLocalPlayer()->powerHerbs++;
+				}
+				else if (randItem == 1) {
+					gameLocal.GetLocalPlayer()->shields++;
+				}
+				else if (randItem == 2) {
+					gameLocal.GetLocalPlayer()->blackBelts++;
+				}
+				else if (randItem == 3) {
+					gameLocal.GetLocalPlayer()->lifeOrbs++;
+				}
+				else {
+					gameLocal.GetLocalPlayer()->rareCandies++;
+				}
+			} else if (!secondTurn) {
+				int attack = rand() % 2;
+				if (!attack) {
+					enemy->Attack1();
+				}
+				else {
+					enemy->Attack2();
+				}
+			}
+			secondTurn = 0;
+		}
+	}
+	if (!waitingforattack && AnimDone(ANIMCHANNEL_LEGS, 0)) {
+		PlayAnim(ANIMCHANNEL_LEGS, "idle", 4);
+	}
 }
 
 /*

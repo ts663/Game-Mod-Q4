@@ -13,6 +13,8 @@ public:
 	
 	void				InitSpawnArgsVariables( void );
 	void				Spawn				( void );
+	void				Attack1				( void );
+	void				Attack2				( void );
 	void				Save				( idSaveGame *savefile ) const;
 	void				Restore				( idRestoreGame *savefile );
 
@@ -77,6 +79,7 @@ rvMonsterIronMaiden::rvMonsterIronMaiden ( void ) {
 void rvMonsterIronMaiden::InitSpawnArgsVariables ( void ) {
 	// Cache the mouth joint
 	jointBansheeAttack = animator.GetJointHandle ( spawnArgs.GetString ( "joint_bansheeAttack", "mouth_effect" ) );	
+	defeatXp = 800;
 }
 /*
 ================
@@ -90,6 +93,46 @@ void rvMonsterIronMaiden::Spawn ( void ) {
 	InitSpawnArgsVariables();
 
 	PlayEffect ( "fx_dress", animator.GetJointHandle ( spawnArgs.GetString ( "joint_laser", "cog_bone" ) ), true );
+}
+
+/*
+================
+rvMonsterIronMaiden::Attack1
+================
+*/
+void rvMonsterIronMaiden::Attack1(void) {
+	idAI* enemy = gameLocal.GetLocalPlayer()->activePokemon;
+	if (!enemy) {
+		return;
+	}
+	TurnToward(enemy->GetEyePosition());
+	PlayAnim(ANIMCHANNEL_LEGS, "melee_attack1", 4);
+	enemy->health -= 15 - (15 * enemy->nullify);
+	enemy->nullify = 0;
+	enemy->aifl.turn = 1;
+	if (enemy->health <= 0) {
+		enemy->Killed(this, this, 0, vec3_zero, INVALID_JOINT);
+	}
+}
+
+/*
+================
+rvMonsterIronMaiden::Attack2
+================
+*/
+void rvMonsterIronMaiden::Attack2(void) {
+	idAI* enemy = gameLocal.GetLocalPlayer()->activePokemon;
+	if (!enemy) {
+		return;
+	}
+	TurnToward(enemy->GetEyePosition());
+	PlayAnim(ANIMCHANNEL_LEGS, "range_attack1", 4);
+	enemy->health -= 25 - (25 * enemy->nullify);
+	enemy->nullify = 0;
+	enemy->aifl.turn = 1;
+	if (enemy->health <= 0) {
+		enemy->Killed(this, this, 0, vec3_zero, INVALID_JOINT);
+	}
 }
 
 /*

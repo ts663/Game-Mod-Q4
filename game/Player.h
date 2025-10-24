@@ -310,10 +310,16 @@ public:
 		int level;
 		int xpToLevelUp;
 	};
-	pokemonDets				pokemonArray[10];
+	idList<pokemonDets>		pokemonArray;
 	int						numPokemon;
 	idAI*					activePokemon;
 	idAI*					activeEnemy;
+	int						powerHerbs;
+	int						shields;
+	int						blackBelts;
+	int						lifeOrbs;
+	int						rareCandies;
+	bool					itemMenu;
 
 	struct playerFlags_s {
 		bool		forward			:1;

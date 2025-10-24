@@ -11,6 +11,8 @@ public:
 	rvMonsterBossMakron ( void );
 
 	void				Spawn							( void );
+	void				Attack1							( void );
+	void				Attack2							( void );
 	void				InitSpawnArgsVariables			( void );
 
 	bool				CanTurn							( void ) const;
@@ -485,6 +487,7 @@ void rvMonsterBossMakron::InitSpawnArgsVariables ( void ) {
 	boltWaitTime = spawnArgs.GetFloat( "lightingsweep_wait_time", "1");
 
 	turnRate = spawnArgs.GetFloat( "fly_turnRate", "180");
+	defeatXp = 5000;
 }
 
 /*
@@ -555,6 +558,46 @@ void rvMonsterBossMakron::Spawn ( void ) {
 
 	// pre-cache decls
 	gameLocal.FindEntityDefDict ( "monster_makron_legs" );
+}
+
+/*
+================
+rvMonsterBossMakron::Attack1
+================
+*/
+void rvMonsterBossMakron::Attack1(void) {
+	idAI* enemy = gameLocal.GetLocalPlayer()->activePokemon;
+	if (!enemy) {
+		return;
+	}
+	TurnToward(enemy->GetEyePosition());
+	PlayAnim(ANIMCHANNEL_LEGS, "melee_attack", 4);
+	enemy->health -= 25 - (25 * enemy->nullify);
+	enemy->nullify = 0;
+	enemy->aifl.turn = 1;
+	if (enemy->health <= 0) {
+		enemy->Killed(this, this, 0, vec3_zero, INVALID_JOINT);
+	}
+}
+
+/*
+================
+rvMonsterBossMakron::Attack2
+================
+*/
+void rvMonsterBossMakron::Attack2(void) {
+	idAI* enemy = gameLocal.GetLocalPlayer()->activePokemon;
+	if (!enemy) {
+		return;
+	}
+	TurnToward(enemy->GetEyePosition());
+	PlayAnim(ANIMCHANNEL_LEGS, "shockwave_stomp", 4);
+	enemy->health -= 35 - (35 * enemy->nullify);
+	enemy->nullify = 0;
+	enemy->aifl.turn = 1;
+	if (enemy->health <= 0) {
+		enemy->Killed(this, this, 0, vec3_zero, INVALID_JOINT);
+	}
 }
 
 /*

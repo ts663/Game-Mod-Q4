@@ -629,7 +629,6 @@ bool idInventory::DetermineAmmoAvailability( idPlayer* owner, const char *ammoNa
 	idStr			realAmmoName( ammoName );
 
 	// Early out
-	gameLocal.Printf("ammo[ammoindex] = %d, ammomax = %d\n", ammo[ammoIndex], ammoMax);
 	if ( ammo[ ammoIndex ] == ammoMax ) {
 		return false;
 	}
@@ -677,7 +676,6 @@ bool idInventory::DetermineAmmoAvailability( idPlayer* owner, const char *ammoNa
 	}
 
 	clipSize = weaponDict->GetInt( "clipSize", "0" );
-	gameLocal.Printf("clipsize %d\n", clipSize);
 
 	// Find the weaponmods for this weapon and see if we have any clipsize mods.
 	for ( int m = 0; m < MAX_WEAPONMODS; m ++ ) {		
@@ -701,15 +699,11 @@ bool idInventory::DetermineAmmoAvailability( idPlayer* owner, const char *ammoNa
 	// Don't bother with these checks if we don't have a clipsize
 	if ( clipSize ) {
 		difference = ( ammoMax - clipSize ) - ( ammo[ ammoIndex ] - clip[ weaponIndex ] );
-		gameLocal.Printf("difference = (%d - %d) - (%d - %d) = %d\n", ammoMax, clipSize, ammo[ammoIndex], clip[weaponIndex], difference);
 
 		if (  difference  ) {
-			gameLocal.Printf("ammoAmount %d\n", ammoAmount);
 			if ( ammoAmount  > difference ) {
-				gameLocal.Printf("ammo[ammoIndex] += difference\n");
 				ammo[ ammoIndex ] += difference;
 			} else {
-				gameLocal.Printf("ammo[ammoIndex] += %d\n", ammoAmount);
 				ammo[ ammoIndex ] += ammoAmount;
 			}
 			return true;
@@ -1350,11 +1344,16 @@ idPlayer::idPlayer() {
 	teamDoublerPending		= false;
 
 	for (int i = 0; i < 3; i++) {
-		pokemonArray[i] = {"monster_pokemon_strogg_marine", 0, 1, 500};
+		pokemonArray.Append({ "monster_pokemon_strogg_marine", 0, 1, 500 });
 	}
-	numPokemon = 3;
 	activePokemon = NULL;
 	activeEnemy = NULL;
+	powerHerbs = 1;
+	shields = 1;
+	blackBelts = 1;
+	lifeOrbs = 1;
+	rareCandies = 1;
+	itemMenu = false;
 }
 
 /*
@@ -2069,6 +2068,9 @@ void idPlayer::Spawn( void ) {
 //RITUAL END
 
 	itemCosts = static_cast< const idDeclEntityDef * >( declManager->FindType( DECL_ENTITYDEF, "ItemCostConstants", false ) );
+	GiveItem("weapon_pokeballlauncher");
+	GiveItem("weapon_emptypokeballlauncher");
+	SelectWeapon("weapon_pokeballlauncher");
 }
 
 /*
@@ -3451,15 +3453,27 @@ void idPlayer::UpdateHudStats( idUserInterface *_hud ) {
 	}
 
 	if (pfl.combat) {
-		hud->HandleNamedEvent("showCombatOptions");
-		hud->HandleNamedEvent("showPokeHealth");
-		hud->SetStateString("pokename", activePokemon != NULL ? activePokemon->spawnArgs.GetString("pokename") : "");
-		hud->SetStateString("pokemonhealth", va("Health: %d", activePokemon != NULL ? activePokemon->health : 0));
+		if (activePokemon && activeEnemy) {
+			hud->SetStateString("currentPokemon", activePokemon->spawnArgs.GetString("classname"));
+			hud->HandleNamedEvent("showCombatOptions");
+			hud->HandleNamedEvent("showPokeHealth");
+			hud->HandleNamedEvent("showEnemyHealth");
+			hud->SetStateString("pokename", activePokemon->spawnArgs.GetString("pokename"));
+			hud->SetStateString("pokemonhealth", va("Health: %d/%d", activePokemon->health, activePokemon->maxHealth));
+			hud->SetStateString("enemyname", activeEnemy->spawnArgs.GetString("enemyname"));
+			hud->SetStateString("enemyhealth", va("Health: %d/%d", activeEnemy->health, activeEnemy->maxHealth));
+		}
 	} else {
 		hud->HandleNamedEvent("hideCombatOptions");
 		hud->HandleNamedEvent("hidePokeHealth");
+		hud->HandleNamedEvent("hideEnemyHealth");
 	}
-	
+	hud->SetStateString("item1name", va("1) Power Herbs (%d)", powerHerbs));
+	hud->SetStateString("item2name", va("2) Shield (%d)", shields));
+	hud->SetStateString("item3name", va("3) Black belt (%d)", blackBelts));
+	hud->SetStateString("item4name", va("4) Life Orb (%d)", lifeOrbs));
+	hud->SetStateString("item5name", va("5) Rare Candy (%d)", rareCandies));
+
 	_hud->StateChanged( gameLocal.time );
 }
 
@@ -6994,15 +7008,15 @@ void idPlayer::UpdateFocus( void ) {
 		bool isAI = ent->IsType( idAI::GetClassType() );
 		bool isFriendly = false;
 		
-		if ( isAI ) {
-			isFriendly = (static_cast<idAI *>( ent )->team == team);
-			if (idStr::Icmp(ent->spawnArgs.GetString("classname"), "monster_pokemon") == 15) {
-				idAI* pokemon = static_cast<idAI*>(ent);
+		if (isAI) {
+			isFriendly = (static_cast<idAI*>(ent)->team == team);
+			idAI* creature = static_cast<idAI*>(ent);
+			if (creature->aifl.pokemon) {
 				if (!pfl.combat) {
 					hud->HandleNamedEvent("showPokeInfo");
-					hud->SetStateString("pokename", spawnArgs.GetString("pokename"));
-					hud->SetStateString("pokelevel", va("Level: %d", pokemon->level));
-					hud->SetStateString("pokexp", va("XP: %d / %d", pokemon->xp, pokemon->xpToLevelUp));
+					hud->SetStateString("pokename", creature->spawnArgs.GetString("pokename"));
+					hud->SetStateString("pokelevel", va("Level: %d", creature->level));
+					hud->SetStateString("pokexp", va("XP: %d / %d", creature->xp, creature->xpToLevelUp));
 				}
 			} else {
 				hud->HandleNamedEvent("hidePokeInfo");

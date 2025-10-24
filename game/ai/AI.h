@@ -444,11 +444,12 @@ public:
 	virtual void			TalkTo							( idActor *actor );
 	virtual void			GiveXP							( int );
 	virtual void			PrintDets						( void );
-	virtual bool			DefeatedEnemy					( void );
 	virtual void			Attack1							( void );
 	virtual void			Attack2							( void );
 	virtual void			Attack3							( void );
+	virtual void			Heal							( void );
 	virtual void			Evolve							( void );
+	void					Flee							( void );
 
 	idEntity*				GetEnemy						( void ) const;
  	idEntity*				GetGoalEntity					( void ) const;
@@ -556,7 +557,10 @@ public:
 	int						xp;
 	int						level;
 	int						xpToLevelUp;
-	idAI*					pokemonArray[3];
+	int						defeatXp;
+	int						amplify;
+	int						nullify;
+	bool					secondTurn;
 
 	// script variables
 	struct aiFlags_s {
@@ -583,6 +587,7 @@ public:
 		bool		killerGuard				:1;			// Do 100 points of damage with each hit
 		bool		pokemon					:1;
 		bool		defeated				:1;
+		bool		turn					:1;
 	} aifl;
 	
 	//
@@ -1376,10 +1381,6 @@ ID_INLINE void idAI::PrintDets(void) {
 	return;
 }
 
-ID_INLINE bool idAI::DefeatedEnemy(void) {
-	return false;
-}
-
 ID_INLINE void idAI::Attack1(void) {
 	return;
 }
@@ -1393,6 +1394,10 @@ ID_INLINE void idAI::Attack3(void) {
 }
 
 ID_INLINE void idAI::Evolve(void) {
+	return;
+}
+
+ID_INLINE void idAI::Heal(void) {
 	return;
 }
 

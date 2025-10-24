@@ -5,6 +5,9 @@
 #include "../Game_local.h"
 #include "../client/ClientModel.h"
 
+// Ranged attack loop
+const idEventDef EV_RangedAttackLoop("rangedAttackLoop");
+
 class rvMonsterPokemonGladiator : public idAI {
 public:
 
@@ -16,10 +19,12 @@ public:
 	void					Spawn(void);
 	void					PrintDets(void);
 	void					GiveXP(int);
-	bool					DefeatedEnemy(void);
 	void					Attack1(void);
 	void					Attack2(void);
+	void					RangedAttackLoop(void);
 	void					Attack3(void);
+	void					Heal(void);
+	void					Think(void);
 	void					Save(idSaveGame* savefile) const;
 	void					Restore(idRestoreGame* savefile);
 
@@ -65,6 +70,11 @@ protected:
 	int						railgunDestroyedTime;
 	int						nextTurnTime;
 
+	bool					waitingforattack;
+	int						damagetodeal;
+	int						loops;
+	int						currLoop;
+
 	virtual bool			CheckActions(void);
 	void					ShowShield(void);
 	void					HideShield(int hideTime = 0);
@@ -86,12 +96,11 @@ private:
 
 	rvScriptFuncUtility		mPostWeaponDestroyed;		// script to run after railgun is destroyed
 
-	idEntity* lastEnemy;
-
 	CLASS_STATES_PROTOTYPE(rvMonsterPokemonGladiator);
 };
 
 CLASS_DECLARATION(idAI, rvMonsterPokemonGladiator)
+	EVENT(EV_RangedAttackLoop, rvMonsterPokemonGladiator::RangedAttackLoop)
 END_CLASS
 
 /*
@@ -110,9 +119,10 @@ void rvMonsterPokemonGladiator::InitSpawnArgsVariables(void)
 	shieldHitDelay = SEC2MS(spawnArgs.GetFloat("shieldHitDelay", "1"));
 	//	shieldInDelay	= SEC2MS ( spawnArgs.GetFloat ( "shieldInDelay", "3" ) );
 	//	shieldFov		= spawnArgs.GetInt ( "shieldfov", "90" );
-	xp = 0;
-	level = 1;
-	xpToLevelUp = 500;
+	xp = gameLocal.GetLocalPlayer()->pokemonArray.StackTop().xp;
+	level = gameLocal.GetLocalPlayer()->pokemonArray.StackTop().level;
+	xpToLevelUp = gameLocal.GetLocalPlayer()->pokemonArray.StackTop().xpToLevelUp;
+	loops = 3;
 }
 /*
 ================
@@ -147,8 +157,15 @@ void rvMonsterPokemonGladiator::Spawn(void) {
 		mPostWeaponDestroyed.Init(func);
 	}
 
+	double pow = 1.0;
+	for (int i = 1; i < level; i++) {
+		pow *= 1.5;
+	}
+	maxHealth *= pow;
+	health = maxHealth;
 	gameLocal.Printf("Spawned pokemon gladiator\n");
 	PrintDets();
+	gameLocal.GetLocalPlayer()->pokemonArray.StackPop();
 }
 
 /*
@@ -179,6 +196,8 @@ void rvMonsterPokemonGladiator::GiveXP(int amount) {
 			xp = 0;
 			level++;
 			xpToLevelUp *= 1.5;
+			maxHealth *= 1.5;
+			health = maxHealth;
 		}
 		else {
 			xp += amount;
@@ -190,26 +209,29 @@ void rvMonsterPokemonGladiator::GiveXP(int amount) {
 
 /*
 ================
-rvMonsterPokemonGladiator::DefeatedEnemy
-================
-*/
-bool rvMonsterPokemonGladiator::DefeatedEnemy(void) {
-	if (lastEnemy) {
-		if (lastEnemy->health <= 0) {
-			lastEnemy = NULL;
-			return true;
-		}
-	}
-	return false;
-}
-
-/*
-================
 rvMonsterPokemonGladiator::Attack1
 ================
 */
 void rvMonsterPokemonGladiator::Attack1(void) {
+	idAI* enemy = gameLocal.GetLocalPlayer()->activeEnemy;
+	if (!enemy) {
+		return;
+	}
+	if (!aifl.turn) {
+		return;
+	}
+	TurnToward(enemy->GetEyePosition());
 	PlayAnim(ANIMCHANNEL_LEGS, "melee_attack", 4);
+	waitingforattack = true;
+	double pow = 1.0;
+	for (int i = 1; i < level; i++) {
+		pow *= 1.5;
+	}
+	damagetodeal = 30 * pow;
+	damagetodeal += damagetodeal * amplify;
+	if (!secondTurn) {
+		aifl.turn = 0;
+	}
 }
 
 /*
@@ -218,13 +240,47 @@ rvMonsterPokemonGladiator::Attack2
 ================
 */
 void rvMonsterPokemonGladiator::Attack2(void) {
-	/*if (level < 2) {
+	idAI* enemy = gameLocal.GetLocalPlayer()->activeEnemy;
+	if (!enemy) {
 		return;
-	}*/
-	SetAnimState(ANIMCHANNEL_TORSO, "Torso_BlasterAttack", actionRangedAttack.blendFrames);
-	aifl.action = true;
-	PostAnimState(ANIMCHANNEL_TORSO, "Torso_FinishAction", 0, 0, SFLAG_ONCLEAR);
-	PostAnimState(ANIMCHANNEL_TORSO, "Torso_Idle", actionRangedAttack.blendFrames);
+	}
+	if (!aifl.turn) {
+		return;
+	}
+	if (level < 2) {
+		return;
+	}
+	TurnToward(enemy->GetEyePosition());
+	PlayAnim(ANIMCHANNEL_LEGS, "blaster_start", 4);
+	double pow = 1.0;
+	for (int i = 1; i < level; i++) {
+		pow *= 1.5;
+	}
+	damagetodeal = 45 * pow;
+	damagetodeal += damagetodeal * amplify;
+	if (!secondTurn) {
+		aifl.turn = 0;
+	}
+	currLoop = 0;
+	PostEventMS(&EV_RangedAttackLoop, 200);
+}
+
+/*
+================
+rvMonsterPokemonGladiator::RangedAttackLoop
+================
+*/
+void rvMonsterPokemonGladiator::RangedAttackLoop(void) {
+	if (currLoop < loops) {
+		currLoop++;
+		PlayAnim(ANIMCHANNEL_LEGS, "blaster_loop", 4);
+		int endTime = animator.CurrentAnim(ANIMCHANNEL_LEGS)->GetEndTime();
+		PostEventMS(&EV_RangedAttackLoop, 200);
+	}
+	else {
+		PlayAnim(ANIMCHANNEL_LEGS, "blaster_end", 4);
+		waitingforattack = true;
+	}
 }
 
 /*
@@ -233,10 +289,108 @@ rvMonsterPokemonGladiator::Attack3
 ================
 */
 void rvMonsterPokemonGladiator::Attack3(void) {
-	/*if (level < 3) {
+	idAI* enemy = gameLocal.GetLocalPlayer()->activeEnemy;
+	if (!enemy) {
 		return;
-	}*/
+	}
+	if (!aifl.turn) {
+		return;
+	}
+	if (level < 3) {
+		return;
+	}
+	TurnToward(enemy->GetEyePosition());
 	PlayAnim(ANIMCHANNEL_LEGS, "railgun_attack3", 4);
+	waitingforattack = true;
+	double pow = 1.0;
+	for (int i = 1; i < level; i++) {
+		pow *= 1.5;
+	}
+	damagetodeal = 60 * pow;
+	damagetodeal += damagetodeal * amplify;
+	if (!secondTurn) {
+		aifl.turn = 0;
+	}
+}
+
+/*
+================
+rvMonsterPokemonGladiator::Heal
+================
+*/
+void rvMonsterPokemonGladiator::Heal(void) {
+	idAI* enemy = gameLocal.GetLocalPlayer()->activeEnemy;
+	if (!enemy) {
+		return;
+	}
+	if (!aifl.turn) {
+		return;
+	}
+	health += maxHealth / 2;
+	if (health > maxHealth) {
+		health = maxHealth;
+	}
+	if (!secondTurn) {
+		aifl.turn = 0;
+	}
+	int attack = rand() % 2;
+	if (!attack) {
+		enemy->Attack1();
+	} else {
+		enemy->Attack2();
+	}
+}
+
+/*
+================
+rvMonsterPokemonGladiator::Think
+================
+*/
+void rvMonsterPokemonGladiator::Think(void) {
+	idAI::Think();
+
+	if (waitingforattack && AnimDone(ANIMCHANNEL_LEGS, 0)) {
+		waitingforattack = false;
+		amplify = 0;
+		idAI* enemy = gameLocal.GetLocalPlayer()->activeEnemy;
+		if (enemy) {
+			enemy->health -= damagetodeal;
+			if (enemy->health <= 0) {
+				enemy->aifl.defeated = 1;
+				health = maxHealth;
+				gameLocal.GetLocalPlayer()->pfl.combat = false;
+				GiveXP(enemy->defeatXp);
+				int randItem = rand() % 5;
+				if (randItem == 0) {
+					gameLocal.GetLocalPlayer()->powerHerbs++;
+				}
+				else if (randItem == 1) {
+					gameLocal.GetLocalPlayer()->shields++;
+				}
+				else if (randItem == 2) {
+					gameLocal.GetLocalPlayer()->blackBelts++;
+				}
+				else if (randItem == 3) {
+					gameLocal.GetLocalPlayer()->lifeOrbs++;
+				}
+				else {
+					gameLocal.GetLocalPlayer()->rareCandies++;
+				}
+			} else if (!secondTurn) {
+				int attack = rand() % 2;
+				if (!attack) {
+					enemy->Attack1();
+				}
+				else {
+					enemy->Attack2();
+				}
+			}
+			secondTurn = 0;
+		}
+	}
+	if (!waitingforattack && AnimDone(ANIMCHANNEL_LEGS, 0)) {
+		PlayAnim(ANIMCHANNEL_LEGS, "idle", 4);
+	}
 }
 
 /*

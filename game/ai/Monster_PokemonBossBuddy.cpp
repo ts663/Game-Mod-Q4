@@ -20,6 +20,7 @@ public:
 	void		Attack1(void);
 	void		Attack2(void);
 	void		Attack3(void);
+	void		Heal(void);
 	void		InitSpawnArgsVariables(void);
 	void		Save(idSaveGame* savefile) const;
 	void		Restore(idRestoreGame* savefile);
@@ -52,6 +53,9 @@ protected:
 	bool		mIsShielded;
 	bool		mRequestedZoneMove;
 	bool		mRequestedRecharge;
+
+	bool		waitingforattack;
+	int			damagetodeal;
 
 	//bool		mCanIdle;
 	//bool		mChaseMode;
@@ -98,9 +102,9 @@ void rvMonsterPokemonBossBuddy::InitSpawnArgsVariables(void)
 {
 	mShieldsLastFor = (int)(spawnArgs.GetFloat("mShieldsLastFor", "6") * 1000.0f);
 	mMaxShields = BOSS_BUDDY_MAX_SHIELDS;
-	xp = 0;
-	level = 1;
-	xpToLevelUp = 500;
+	xp = gameLocal.GetLocalPlayer()->pokemonArray.StackTop().xp;
+	level = gameLocal.GetLocalPlayer()->pokemonArray.StackTop().level;
+	xpToLevelUp = gameLocal.GetLocalPlayer()->pokemonArray.StackTop().xpToLevelUp;
 }
 
 //------------------------------------------------------------
@@ -132,8 +136,15 @@ void rvMonsterPokemonBossBuddy::Spawn(void)
 
 	HideSurface("models/monsters/bossbuddy/forcefield");
 
+	double pow = 1.0;
+	for (int i = 1; i < level; i++) {
+		pow *= 1.5;
+	}
+	maxHealth *= pow;
+	health = maxHealth;
 	gameLocal.Printf("Spawned pokemon boss buddy\n");
 	PrintDets();
+	gameLocal.GetLocalPlayer()->pokemonArray.StackPop();
 }
 
 /*
@@ -164,6 +175,8 @@ void rvMonsterPokemonBossBuddy::GiveXP(int amount) {
 			xp = 0;
 			level++;
 			xpToLevelUp *= 1.5;
+			maxHealth *= 1.5;
+			health = maxHealth;
 		}
 		else {
 			xp += amount;
@@ -179,7 +192,23 @@ rvMonsterPokemonBossBuddy::Attack1
 ================
 */
 void rvMonsterPokemonBossBuddy::Attack1(void) {
+	idAI* enemy = gameLocal.GetLocalPlayer()->activeEnemy;
+	if (!enemy) {
+		return;
+	}
+	if (!aifl.turn) {
+		return;
+	}
+	TurnToward(enemy->GetEyePosition());
 	PlayAnim(ANIMCHANNEL_LEGS, "melee_attack", 4);
+	waitingforattack = true;
+	double pow = 1.0;
+	for (int i = 1; i < level; i++) {
+		pow *= 1.5;
+	}
+	damagetodeal = 50 * pow;
+	damagetodeal += damagetodeal * amplify;
+	aifl.turn = 0;
 }
 
 /*
@@ -188,10 +217,28 @@ rvMonsterPokemonBossBuddy::Attack2
 ================
 */
 void rvMonsterPokemonBossBuddy::Attack2(void) {
-	/*if (level < 2) {
+	idAI* enemy = gameLocal.GetLocalPlayer()->activeEnemy;
+	if (!enemy) {
 		return;
-	}*/
+	}
+	if (!aifl.turn) {
+		return;
+	}
+	if (level < 2) {
+		return;
+	}
+	TurnToward(enemy->GetEyePosition());
 	PlayAnim(ANIMCHANNEL_LEGS, "attack_rocket", 4);
+	waitingforattack = true;
+	double pow = 1.0;
+	for (int i = 1; i < level; i++) {
+		pow *= 1.5;
+	}
+	damagetodeal = 75 * pow;
+	damagetodeal += damagetodeal * amplify;
+	if (!secondTurn) {
+		aifl.turn = 0;
+	}
 }
 
 /*
@@ -200,10 +247,56 @@ rvMonsterPokemonBossBuddy::Attack3
 ================
 */
 void rvMonsterPokemonBossBuddy::Attack3(void) {
-	/*if (level < 3) {
+	idAI* enemy = gameLocal.GetLocalPlayer()->activeEnemy;
+	if (!enemy) {
 		return;
-	}*/
+	}
+	if (!aifl.turn) {
+		return;
+	}
+	if (level < 3) {
+		return;
+	}
+	TurnToward(enemy->GetEyePosition());
 	PlayAnim(ANIMCHANNEL_LEGS, "attack_lightning", 4);
+	waitingforattack = true;
+	double pow = 1.0;
+	for (int i = 1; i < level; i++) {
+		pow *= 1.5;
+	}
+	damagetodeal = 100 * pow;
+	damagetodeal += damagetodeal * amplify;
+	if (!secondTurn) {
+		aifl.turn = 0;
+	}
+}
+
+/*
+================
+rvMonsterPokemonBossBuddy::Heal
+================
+*/
+void rvMonsterPokemonBossBuddy::Heal(void) {
+	idAI* enemy = gameLocal.GetLocalPlayer()->activeEnemy;
+	if (!enemy) {
+		return;
+	}
+	if (!aifl.turn) {
+		return;
+	}
+	health += maxHealth / 2;
+	if (health > maxHealth) {
+		health = maxHealth;
+	}
+	if (!secondTurn) {
+		aifl.turn = 0;
+	}
+	int attack = rand() % 2;
+	if (!attack) {
+		enemy->Attack1();
+	} else {
+		enemy->Attack2();
+	}
 }
 
 //------------------------------------------------------------
@@ -400,6 +493,49 @@ void rvMonsterPokemonBossBuddy::Think()
 	}
 
 	idAI::Think();
+
+	if (waitingforattack && AnimDone(ANIMCHANNEL_LEGS, 0)) {
+		waitingforattack = false;
+		amplify = 0;
+		idAI* enemy = gameLocal.GetLocalPlayer()->activeEnemy;
+		if (enemy) {
+			enemy->health -= damagetodeal;
+			if (enemy->health <= 0) {
+				enemy->aifl.defeated = 1;
+				health = maxHealth;
+				gameLocal.GetLocalPlayer()->pfl.combat = false;
+				GiveXP(enemy->defeatXp);
+				int randItem = rand() % 5;
+				if (randItem == 0) {
+					gameLocal.GetLocalPlayer()->powerHerbs++;
+				}
+				else if (randItem == 1) {
+					gameLocal.GetLocalPlayer()->shields++;
+				}
+				else if (randItem == 2) {
+					gameLocal.GetLocalPlayer()->blackBelts++;
+				}
+				else if (randItem == 3) {
+					gameLocal.GetLocalPlayer()->lifeOrbs++;
+				}
+				else {
+					gameLocal.GetLocalPlayer()->rareCandies++;
+				}
+			} else if (!secondTurn) {
+				int attack = rand() % 2;
+				if (!attack) {
+					enemy->Attack1();
+				}
+				else {
+					enemy->Attack2();
+				}
+			}
+			secondTurn = 0;
+		}
+	}
+	if (!waitingforattack && AnimDone(ANIMCHANNEL_LEGS, 0)) {
+		PlayAnim(ANIMCHANNEL_LEGS, "idle", 4);
+	}
 }
 /*
 //------------------------------------------------------------

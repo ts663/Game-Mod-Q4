@@ -14,6 +14,8 @@ public:
 	rvMonsterBerserker ( void );
 
 	void				Spawn							( void );
+	void				Attack1							( void );
+	void				Attack2							( void );
 	void				Save							( idSaveGame *savefile ) const;
 	void				Restore							( idRestoreGame *savefile );
 
@@ -78,6 +80,47 @@ void rvMonsterBerserker::Spawn ( void ) {
 	actionChargeAttack.Init ( spawnArgs, "action_chargeAttack", "Torso_ChargeAttack",	AIACTIONF_ATTACK );
 	PlayEffect( "fx_ambient_electricity", animator.GetJointHandle( "r_Lowerarm_Real" ), true );
 	PlayEffect( "fx_ambient_electricity_mace", animator.GetJointHandle( "chain9" ), true );
+	defeatXp = 750;
+}
+
+/*
+================
+rvMonsterBerserker::Attack1
+================
+*/
+void rvMonsterBerserker::Attack1(void) {
+	idAI* enemy = gameLocal.GetLocalPlayer()->activePokemon;
+	if (!enemy) {
+		return;
+	}
+	TurnToward(enemy->GetEyePosition());
+	PlayAnim(ANIMCHANNEL_LEGS, "melee_attack4", 4);
+	enemy->health -= 10 - (10 * enemy->nullify);
+	enemy->nullify = 0;
+	enemy->aifl.turn = 1;
+	if (enemy->health <= 0) {
+		enemy->Killed(this, this, 0, vec3_zero, INVALID_JOINT);
+	}
+}
+
+/*
+================
+rvMonsterBerserker::Attack2
+================
+*/
+void rvMonsterBerserker::Attack2(void) {
+	idAI* enemy = gameLocal.GetLocalPlayer()->activePokemon;
+	if (!enemy) {
+		return;
+	}
+	TurnToward(enemy->GetEyePosition());
+	PlayAnim(ANIMCHANNEL_LEGS, "ranged_attack", 4);
+	enemy->health -= 15 - (15 * enemy->nullify);
+	enemy->nullify = 0;
+	enemy->aifl.turn = 1;
+	if (enemy->health <= 0) {
+		enemy->Killed(this, this, 0, vec3_zero, INVALID_JOINT);
+	}
 }
 
 /*

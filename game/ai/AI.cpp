@@ -143,6 +143,12 @@ idAI::idAI ( void ) {
 	xp				= 0;
 	level			= 1;
 	xpToLevelUp		= 500;
+	defeatXp		= 0;
+	amplify			= 0;
+	nullify			= 0;
+	secondTurn		= 0;
+	aifl.defeated	= 0;
+	aifl.turn		= 0;
 
 	srand(time(0));
 }
@@ -163,6 +169,15 @@ idAI::~idAI() {
 	scriptObject.Free();
 	aiManager.RemoveTeammate ( this );
 	SetPhysics( NULL );
+}
+
+/*
+=====================
+idAI::Flee
+=====================
+*/
+void idAI::Flee() {
+	gameLocal.GetLocalPlayer()->pfl.combat = false;
 }
 
 /*
@@ -1763,13 +1778,10 @@ void idAI::Killed( idEntity *inflictor, idEntity *attacker, int damage, const id
 	}
 	if (aifl.pokemon) {
 		gameLocal.GetLocalPlayer()->activePokemon = NULL;
-		if (gameLocal.GetLocalPlayer()->numPokemon < 10) {
-			gameLocal.GetLocalPlayer()->pokemonArray[gameLocal.GetLocalPlayer()->numPokemon] = {spawnArgs.GetString("classname"), xp, level, xpToLevelUp};
-			gameLocal.GetLocalPlayer()->numPokemon++;
-		}
 	} else {
 		gameLocal.GetLocalPlayer()->activeEnemy = NULL;
 	}
+	gameLocal.GetLocalPlayer()->pfl.combat = false;
 }
 
 /***********************************************************************
@@ -3426,8 +3438,12 @@ void idAI::OnTouch( idEntity *other, trace_t *trace ) {
 	aifl.pushed = true;
 
 	if (!aifl.pokemon && other && other->IsType(idPlayer::GetClassType())) {
-		gameLocal.GetLocalPlayer()->pfl.combat = true;
-		gameLocal.GetLocalPlayer()->activeEnemy = this;
+		if (gameLocal.GetLocalPlayer()->activePokemon) {
+			gameLocal.GetLocalPlayer()->pfl.combat = true;
+			gameLocal.GetLocalPlayer()->activeEnemy = this;
+			TurnToward(gameLocal.GetLocalPlayer()->activePokemon->GetEyePosition());
+			gameLocal.GetLocalPlayer()->activePokemon->aifl.turn = 1;
+		}
 	}
 	
 	// If pushed by the player update tactical

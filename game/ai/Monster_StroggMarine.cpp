@@ -15,6 +15,8 @@ public:
 
 	void				InitSpawnArgsVariables			( void );
 	void				Spawn							( void );
+	void				Attack1							( void );
+	void				Attack2							( void );
 	void				Save							( idSaveGame *savefile ) const;
 	void				Restore							( idRestoreGame *savefile );
 
@@ -88,6 +90,7 @@ void rvMonsterStroggMarine::InitSpawnArgsVariables( void )
 	minShots = spawnArgs.GetInt ( "minShots", "1" );
 	attackRate = SEC2MS( spawnArgs.GetFloat( "attackRate", "0.2" ) );
 	attackJoint = animator.GetJointHandle( spawnArgs.GetString( "attackJoint", "muzzle" ) );
+	defeatXp = 250;
 }
 /*
 ================
@@ -106,6 +109,54 @@ void rvMonsterStroggMarine::Spawn ( void ) {
 
 	shots	 = 0;
 	shotsFired = 0;
+}
+
+/*
+================
+rvMonsterStroggMarine::Attack1
+================
+*/
+void rvMonsterStroggMarine::Attack1(void) {
+	idAI* enemy = gameLocal.GetLocalPlayer()->activePokemon;
+	if (!enemy) {
+		return;
+	}
+	TurnToward(enemy->GetEyePosition());
+	PlayAnim(ANIMCHANNEL_LEGS, "melee_attack3", 4);
+	enemy->health -= 5 - (5 * enemy->nullify);
+	enemy->nullify = 0;
+	enemy->aifl.turn = 1;
+	if (enemy->health <= 0) {
+		enemy->Killed(this, this, 0, vec3_zero, INVALID_JOINT);
+	}
+}
+
+/*
+================
+rvMonsterStroggMarine::Attack2
+================
+*/
+void rvMonsterStroggMarine::Attack2(void) {
+	idAI* enemy = gameLocal.GetLocalPlayer()->activePokemon;
+	if (!enemy) {
+		return;
+	}
+	TurnToward(enemy->GetEyePosition());
+	if (idStr::Icmp(spawnArgs.GetString("classname"), "monster_strogg_marine_sgun") == 0) {
+		PlayAnim(ANIMCHANNEL_LEGS, "shotgun_range_attack", 4);
+	}
+	else {
+		SetAnimState(ANIMCHANNEL_TORSO, "Torso_RangedAttack", actionRangedAttack.blendFrames);
+		aifl.action = true;
+		PostAnimState(ANIMCHANNEL_TORSO, "Torso_FinishAction", 0, 0, SFLAG_ONCLEAR);
+		PostAnimState(ANIMCHANNEL_TORSO, "Torso_Idle", actionRangedAttack.blendFrames);
+	}
+	enemy->health -= 10 - (10 * enemy->nullify);
+	enemy->nullify = 0;
+	enemy->aifl.turn = 1;
+	if (enemy->health <= 0) {
+		enemy->Killed(this, this, 0, vec3_zero, INVALID_JOINT);
+	}
 }
 
 /*

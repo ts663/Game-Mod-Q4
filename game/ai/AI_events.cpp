@@ -1062,9 +1062,7 @@ idAI::Event_Attack
 ================
 */
 void idAI::Event_Attack ( const char* attackName, const char* jointName ) { 
-	//if (!combat.fl.ignoreEnemies) {
-		Attack(attackName, animator.GetJointHandle(jointName), enemy.ent); // , physicsObj.GetPushedLinearVelocity ( ) ); 
-	//}
+	Attack(attackName, animator.GetJointHandle(jointName), enemy.ent); // , physicsObj.GetPushedLinearVelocity ( ) ); 
 }
 
 /*
@@ -1073,15 +1071,11 @@ idAI::Event_AttackMelee
 ================
 */
 void idAI::Event_AttackMelee( const char* meleeName ) { 
-	/*if (combat.fl.ignoreEnemies) {
-		return;
-	}*/
 	const idDict* meleeDict;
 	meleeDict = gameLocal.FindEntityDefDict ( spawnArgs.GetString ( va("def_attack_%s", meleeName ) ), false );
 	if ( !meleeDict ) {
 		gameLocal.Error ( "missing meleeDef '%s' for ai entity '%s'", meleeName, GetName() );
 	}
-	gameLocal.Printf("event_attackmelee\n");
 	AttackMelee ( meleeName, meleeDict ); 
 }
 

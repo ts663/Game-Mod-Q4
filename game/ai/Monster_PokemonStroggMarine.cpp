@@ -6,6 +6,10 @@
 
 
 //NOTE: actually a bit of a misnomer, as all Strogg Marine types use this class now...
+
+// Ranged attack loop
+const idEventDef EV_RangedAttackLoop("rangedAttackLoop");
+
 class rvMonsterPokemonStroggMarine : public idAI {
 public:
 
@@ -17,10 +21,12 @@ public:
 	void				Spawn(void);
 	void				PrintDets(void);
 	void				GiveXP(int);
-	bool				DefeatedEnemy(void);
 	void				Attack1(void);
 	void				Attack2(void);
+	void				RangedAttackLoop(void);
+	void				Heal(void);
 	void				Evolve(void);
+	void				Think(void);
 	void				Save(idSaveGame* savefile) const;
 	void				Restore(idRestoreGame* savefile);
 
@@ -41,7 +47,10 @@ protected:
 
 	bool				EnemyMovingToRight(void);
 
-	idEntity*			lastEnemy;
+	bool				waitingforattack;
+	int					damagetodeal;
+	int					loops;
+	int					currLoop;
 
 private:
 
@@ -79,6 +88,7 @@ private:
 };
 
 CLASS_DECLARATION(idAI, rvMonsterPokemonStroggMarine)
+	EVENT(EV_RangedAttackLoop, rvMonsterPokemonStroggMarine::RangedAttackLoop)
 END_CLASS
 
 /*
@@ -96,9 +106,10 @@ void rvMonsterPokemonStroggMarine::InitSpawnArgsVariables(void)
 	minShots = spawnArgs.GetInt("minShots", "1");
 	attackRate = SEC2MS(spawnArgs.GetFloat("attackRate", "0.2"));
 	attackJoint = animator.GetJointHandle(spawnArgs.GetString("attackJoint", "muzzle"));
-	xp = 0;
-	level = 1;
-	xpToLevelUp = 500;
+	xp = gameLocal.GetLocalPlayer()->pokemonArray.StackTop().xp;
+	level = gameLocal.GetLocalPlayer()->pokemonArray.StackTop().level;
+	xpToLevelUp = gameLocal.GetLocalPlayer()->pokemonArray.StackTop().xpToLevelUp;
+	loops = 3;
 }
 /*
 ================
@@ -119,8 +130,15 @@ void rvMonsterPokemonStroggMarine::Spawn(void) {
 
 	shots = 0;
 	shotsFired = 0;
+	double pow = 1.0;
+	for (int i = 1; i < level; i++) {
+		pow *= 1.5;
+	}
+	maxHealth *= pow;
+	health = maxHealth;
 	gameLocal.Printf("Spawned pokemon strogg\n");
 	PrintDets();
+	gameLocal.GetLocalPlayer()->pokemonArray.StackPop();
 }
 
 /*
@@ -151,6 +169,8 @@ void rvMonsterPokemonStroggMarine::GiveXP(int amount) {
 			xp = 0;
 			level++;
 			xpToLevelUp *= 1.5;
+			maxHealth *= 1.5;
+			health = maxHealth;
 		}
 		else {
 			xp += amount;
@@ -162,45 +182,29 @@ void rvMonsterPokemonStroggMarine::GiveXP(int amount) {
 
 /*
 ================
-rvMonsterPokemonStroggMarine::DefeatedEnemy
-================
-*/
-bool rvMonsterPokemonStroggMarine::DefeatedEnemy(void) {
-	if (lastEnemy) {
-		if (lastEnemy->health <= 0) {
-			lastEnemy = NULL;
-			return true;
-		}
-	}
-	return false;
-}
-
-/*
-================
 rvMonsterPokemonStroggMarine::Attack1
 ================
 */
 void rvMonsterPokemonStroggMarine::Attack1(void) {
-	/*idEntity* potential = FindEnemy(!IsBehindCover(), 0, 0.0f);
-	if (!potential) {
+	idAI* enemy = gameLocal.GetLocalPlayer()->activeEnemy;
+	if (!enemy) {
 		return;
 	}
-	enemy.ent = potential;
-	lastEnemy = enemy.ent;
-	gameLocal.Printf("Current enemy: %s\n", enemy.ent.GetEntity()->name.c_str());
-	combat.fl.ignoreEnemies = false;
-	PerformAction(&actionMeleeAttack, (checkAction_t)&idAI::CheckAction_MeleeAttack);*/
-	PlayAnim(ANIMCHANNEL_LEGS, "melee_attack3", 4);
-	/*int timeToCompare = gameLocal.time;
-	while (gameLocal.time - timeToCompare < 5000) {
-		continue;
+	if (!aifl.turn) {
+		return;
 	}
-	gameLocal.Printf("%d\n", gameLocal.time - timeToCompare);
-	gameLocal.Printf("timer done\n");
-	SetAnimState(ANIMCHANNEL_TORSO, "State_Combat", 4);
-	aifl.action = true;
-	PostAnimState(ANIMCHANNEL_TORSO, "Torso_FinishAction", 0, 0, SFLAG_ONCLEAR);
-	PostAnimState(ANIMCHANNEL_TORSO, "Torso_Idle", actionRangedAttack.blendFrames);*/
+	TurnToward(enemy->GetEyePosition());
+	PlayAnim(ANIMCHANNEL_LEGS, "melee_attack3", 4);
+	waitingforattack = true;
+	double pow = 1.0;
+	for (int i = 1; i < level; i++) {
+		pow *= 1.5;
+	}
+	damagetodeal = 10 * pow;
+	damagetodeal += damagetodeal * amplify;
+	if (!secondTurn) {
+		aifl.turn = 0;
+	}
 }
 
 /*
@@ -209,16 +213,92 @@ rvMonsterPokemonStroggMarine::Attack2
 ================
 */
 void rvMonsterPokemonStroggMarine::Attack2(void) {
-	/*if (level < 2) {
+	idAI* enemy = gameLocal.GetLocalPlayer()->activeEnemy;
+	if (!enemy) {
 		return;
-	}*/
+	}
+	if (!aifl.turn) {
+		return;
+	}
+	if (level < 2) {
+		return;
+	}
+	TurnToward(enemy->GetEyePosition());
+	double pow = 1.0;
+	for (int i = 1; i < level; i ++) {
+		pow *= 1.5;
+	}
 	if (idStr::Icmp(spawnArgs.GetString("classname"), "monster_pokemon_strogg_marine_sgun") == 0) {
 		PlayAnim(ANIMCHANNEL_LEGS, "shotgun_range_attack", 4);
+		damagetodeal = 25 * pow;
+		damagetodeal += damagetodeal * amplify;
+		waitingforattack = true;
+		if (!secondTurn) {
+			aifl.turn = 0;
+		}
+	} else if (idStr::Icmp(spawnArgs.GetString("classname"), "monster_pokemon_strogg_marine") == 0) {
+		PlayAnim(ANIMCHANNEL_LEGS, "range_attack1_start", 4);
+		damagetodeal = 20 * pow;
+		damagetodeal += damagetodeal * amplify;
+		if (!secondTurn) {
+			aifl.turn = 0;
+		}
+		currLoop = 0;
+		PostEventMS(&EV_RangedAttackLoop, 200);
 	} else {
-		SetAnimState(ANIMCHANNEL_TORSO, "Torso_RangedAttack", actionRangedAttack.blendFrames);
-		aifl.action = true;
-		PostAnimState(ANIMCHANNEL_TORSO, "Torso_FinishAction", 0, 0, SFLAG_ONCLEAR);
-		PostAnimState(ANIMCHANNEL_TORSO, "Torso_Idle", actionRangedAttack.blendFrames);
+		PlayAnim(ANIMCHANNEL_LEGS, "range_attack1_start", 4);
+		damagetodeal = 30 * pow;
+		damagetodeal += damagetodeal * amplify;
+		if (!secondTurn) {
+			aifl.turn = 0;
+		}
+		currLoop = 0;
+		PostEventMS(&EV_RangedAttackLoop, 200);
+	}
+}
+
+/*
+================
+rvMonsterPokemonStroggMarine::RangedAttackLoop
+================
+*/
+void rvMonsterPokemonStroggMarine::RangedAttackLoop(void) {
+	if (currLoop < loops) {
+		currLoop ++;
+		PlayAnim(ANIMCHANNEL_LEGS, "range_attack1_loop", 4);
+		int endTime = animator.CurrentAnim(ANIMCHANNEL_LEGS)->GetEndTime();
+		PostEventMS(&EV_RangedAttackLoop, 200);
+	} else {
+		PlayAnim(ANIMCHANNEL_LEGS, "range_attack1_end", 4);
+		waitingforattack = true;
+	}
+}
+
+/*
+================
+rvMonsterPokemonStroggMarine::Heal
+================
+*/
+void rvMonsterPokemonStroggMarine::Heal(void) {
+	idAI* enemy = gameLocal.GetLocalPlayer()->activeEnemy;
+	if (!enemy) {
+		return;
+	}
+	if (!aifl.turn) {
+		return;
+	}
+	health += maxHealth / 2;
+	if (health > maxHealth) {
+		health = maxHealth;
+	}
+	if (!secondTurn) {
+		aifl.turn = 0;
+	}
+	int attack = rand() % 2;
+	if (!attack) {
+		enemy->Attack1();
+	} else {
+		enemy->Attack2();
 	}
 }
 
@@ -228,16 +308,22 @@ rvMonsterPokemonStroggMarine::Evolve
 ================
 */
 void rvMonsterPokemonStroggMarine::Evolve(void) {
-	/*if (level < 3) {
+	idAI* enemy = gameLocal.GetLocalPlayer()->activeEnemy;
+	if (!enemy) {
 		return;
-	}*/
+	}
+	if (!aifl.turn) {
+		return;
+	}
+	if (level < 3) {
+		return;
+	}
 	idVec3 pos = GetEyePosition();
 	if (idStr::Icmp(spawnArgs.GetString("classname"), "monster_pokemon_strogg_marine_mgun") == 0) {
 		return;
 	}
 	Killed(this, this, 0, vec3_zero, INVALID_JOINT);
 	idDict dict;
-	dict.Set("classname", gameLocal.GetLocalPlayer()->pokemonArray[0].name);
 	dict.Set("origin", pos.ToString());
 	if (idStr::Icmp(spawnArgs.GetString("classname"), "monster_pokemon_strogg_marine") == 0) {
 		dict.Set("classname", "monster_pokemon_strogg_marine_sgun");
@@ -246,6 +332,54 @@ void rvMonsterPokemonStroggMarine::Evolve(void) {
 	}
 	idEntity* pokemon;
 	gameLocal.SpawnEntityDef(dict, &pokemon);
+}
+
+/*
+================
+rvMonsterPokemonStroggMarine::Think
+================
+*/
+void rvMonsterPokemonStroggMarine::Think(void) {
+	idAI::Think();
+
+	if (waitingforattack && AnimDone(ANIMCHANNEL_LEGS, 0)) {
+		waitingforattack = false;
+		amplify = 0;
+		idAI* enemy = gameLocal.GetLocalPlayer()->activeEnemy;
+		if (enemy) {
+			enemy->health -= damagetodeal;
+			if (enemy->health <= 0) {
+				enemy->aifl.defeated = 1;
+				health = maxHealth;
+				gameLocal.GetLocalPlayer()->pfl.combat = false;
+				GiveXP(enemy->defeatXp);
+				int randItem = rand() % 5;
+				if (randItem == 0) {
+					gameLocal.GetLocalPlayer()->powerHerbs++;
+				} else if (randItem == 1) {
+					gameLocal.GetLocalPlayer()->shields++;
+				} else if (randItem == 2) {
+					gameLocal.GetLocalPlayer()->blackBelts++;
+				} else if (randItem == 3) {
+					gameLocal.GetLocalPlayer()->lifeOrbs++;
+				} else {
+					gameLocal.GetLocalPlayer()->rareCandies++;
+				}
+			} else if (!secondTurn) {
+				int attack = rand() % 2;
+				if (!attack) {
+					enemy->Attack1();
+				}
+				else {
+					enemy->Attack2();
+				}
+			}
+			secondTurn = 0;
+		}
+	}
+	if (!waitingforattack && AnimDone(ANIMCHANNEL_LEGS, 0)) {
+		PlayAnim(ANIMCHANNEL_LEGS, "idle", 4);
+	}
 }
 
 /*

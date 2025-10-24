@@ -15,6 +15,8 @@ public:
 	rvMonsterBossBuddy( void );
 
 	void		Spawn							( void );
+	void		Attack1							( void );
+	void		Attack2							( void );
 	void		InitSpawnArgsVariables			( void );
 	void		Save							( idSaveGame *savefile ) const;
 	void		Restore							( idRestoreGame *savefile );
@@ -93,6 +95,7 @@ void rvMonsterBossBuddy::InitSpawnArgsVariables ( void )
 {
 	mShieldsLastFor = (int)(spawnArgs.GetFloat( "mShieldsLastFor", "6" ) * 1000.0f);
 	mMaxShields = BOSS_BUDDY_MAX_SHIELDS;
+	defeatXp = 5000;
 }
 
 //------------------------------------------------------------
@@ -121,6 +124,46 @@ void rvMonsterBossBuddy::Spawn( void )
 	}
 
 	HideSurface( "models/monsters/bossbuddy/forcefield" );
+}
+
+/*
+================
+rvMonsterBossBuddy::Attack1
+================
+*/
+void rvMonsterBossBuddy::Attack1(void) {
+	idAI* enemy = gameLocal.GetLocalPlayer()->activePokemon;
+	if (!enemy) {
+		return;
+	}
+	TurnToward(enemy->GetEyePosition());
+	PlayAnim(ANIMCHANNEL_LEGS, "melee_attack", 4);
+	enemy->health -= 25 - (25 * enemy->nullify);
+	enemy->nullify = 0;
+	enemy->aifl.turn = 1;
+	if (enemy->health <= 0) {
+		enemy->Killed(this, this, 0, vec3_zero, INVALID_JOINT);
+	}
+}
+
+/*
+================
+rvMonsterBossBuddy::Attack2
+================
+*/
+void rvMonsterBossBuddy::Attack2(void) {
+	idAI* enemy = gameLocal.GetLocalPlayer()->activePokemon;
+	if (!enemy) {
+		return;
+	}
+	TurnToward(enemy->GetEyePosition());
+	PlayAnim(ANIMCHANNEL_LEGS, "attack_rocket", 4);
+	enemy->health -= 35 - (35 * enemy->nullify);
+	enemy->nullify = 0;
+	enemy->aifl.turn = 1;
+	if (enemy->health <= 0) {
+		enemy->Killed(this, this, 0, vec3_zero, INVALID_JOINT);
+	}
 }
 
 //------------------------------------------------------------

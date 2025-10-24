@@ -14,6 +14,8 @@ public:
 
 	void					InitSpawnArgsVariables( void );
 	void					Spawn				( void );
+	void					Attack1				( void );
+	void					Attack2				( void );
 	void					Save				( idSaveGame *savefile ) const;
 	void					Restore				( idRestoreGame *savefile );
 
@@ -102,6 +104,7 @@ void rvMonsterGladiator::InitSpawnArgsVariables ( void )
 	shieldHitDelay  = SEC2MS ( spawnArgs.GetFloat ( "shieldHitDelay", "1" ) );
 //	shieldInDelay	= SEC2MS ( spawnArgs.GetFloat ( "shieldInDelay", "3" ) );
 //	shieldFov		= spawnArgs.GetInt ( "shieldfov", "90" );
+	defeatXp = 2000;
 }
 /*
 ================
@@ -131,6 +134,49 @@ void rvMonsterGladiator::Spawn ( void ) {
 	if ( spawnArgs.GetString( "script_postWeaponDestroyed", "", &func ) ) 
 	{
 		mPostWeaponDestroyed.Init( func );
+	}
+}
+
+/*
+================
+rvMonsterGladiator::Attack1
+================
+*/
+void rvMonsterGladiator::Attack1(void) {
+	idAI* enemy = gameLocal.GetLocalPlayer()->activePokemon;
+	if (!enemy) {
+		return;
+	}
+	TurnToward(enemy->GetEyePosition());
+	PlayAnim(ANIMCHANNEL_LEGS, "melee_attack", 4);
+	enemy->health -= 15 - (15 * enemy->nullify);
+	enemy->nullify = 0;
+	enemy->aifl.turn = 1;
+	if (enemy->health <= 0) {
+		enemy->Killed(this, this, 0, vec3_zero, INVALID_JOINT);
+	}
+}
+
+/*
+================
+rvMonsterGladiator::Attack2
+================
+*/
+void rvMonsterGladiator::Attack2(void) {
+	idAI* enemy = gameLocal.GetLocalPlayer()->activePokemon;
+	if (!enemy) {
+		return;
+	}
+	TurnToward(enemy->GetEyePosition());
+	SetAnimState(ANIMCHANNEL_TORSO, "Torso_BlasterAttack", actionRangedAttack.blendFrames);
+	aifl.action = true;
+	PostAnimState(ANIMCHANNEL_TORSO, "Torso_FinishAction", 0, 0, SFLAG_ONCLEAR);
+	PostAnimState(ANIMCHANNEL_TORSO, "Torso_Idle", actionRangedAttack.blendFrames);
+	enemy->health -= 25 - (25 * enemy->nullify);
+	enemy->nullify = 0;
+	enemy->aifl.turn = 1;
+	if (enemy->health <= 0) {
+		enemy->Killed(this, this, 0, vec3_zero, INVALID_JOINT);
 	}
 }
 

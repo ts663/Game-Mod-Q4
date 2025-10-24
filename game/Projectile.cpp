@@ -730,15 +730,48 @@ bool idProjectile::Collide( const trace_t &collision, const idVec3 &velocity, bo
 
 	if (owner.GetEntity() && owner.GetEntity()->IsType(idPlayer::GetClassType())) {
 		if (ent->IsType(idAI::GetClassType())) {
-			idAI* enemyent = static_cast<idAI*>(ent);
+			idAI* creature = static_cast<idAI*>(ent);
 			const char* projName = spawnArgs.GetString("classname", "");
 			if (idStr::Icmp(projName, "projectile_emptypokeball") == 0) {
-				enemyent->Killed(this, this, 0, vec3_zero, INVALID_JOINT);
-				// give player pokeball
-				// add pokemon to list
-				if (gameLocal.GetLocalPlayer()->numPokemon < 10) {
-					gameLocal.GetLocalPlayer()->pokemonArray[gameLocal.GetLocalPlayer()->numPokemon] = {va("monster_pokemon_%s", enemyent->spawnArgs.GetString("classname")), 0, 1, 500};
-					gameLocal.GetLocalPlayer()->numPokemon++;
+				if (creature->aifl.pokemon && gameLocal.GetLocalPlayer()->activePokemon) {
+					if (gameLocal.GetLocalPlayer()->pokemonArray.Num() < 10) {
+						gameLocal.GetLocalPlayer()->pokemonArray.Append({ creature->spawnArgs.GetString("classname"), creature->xp, creature->level, creature->xpToLevelUp });
+						gameLocal.GetLocalPlayer()->GiveItem("ammo_pokeballlauncher");
+					}
+					creature->Killed(this, this, 0, vec3_zero, INVALID_JOINT);
+				} else {
+					if (creature->aifl.defeated && gameLocal.GetLocalPlayer()->activeEnemy) {
+						creature->Killed(this, this, 0, vec3_zero, INVALID_JOINT);
+						if (gameLocal.GetLocalPlayer()->pokemonArray.Num() < 10) {
+							const char* creatureClass = creature->spawnArgs.GetString("classname");
+							const char* spawnName = "";
+							if (idStr::Icmp(creatureClass, "monster_strogg_marine") == 0) {
+								spawnName = "monster_pokemon_strogg_marine";
+							} else if (idStr::Icmp(creatureClass, "monster_strogg_marine_sgun") == 0) {
+								spawnName = "monster_pokemon_strogg_marine_sgun";
+							} else if (idStr::Icmp(creatureClass, "monster_strogg_marine_mgun") == 0) {
+								spawnName = "monster_pokemon_strogg_marine_mgun";
+							} else if (idStr::Icmp(creatureClass, "monster_gladiator") == 0) {
+								spawnName = "monster_pokemon_gladiator";
+							} else if (idStr::Icmp(creatureClass, "monster_berserker") == 0) {
+								spawnName = "monster_pokemon_berserker";
+							} else if (idStr::Icmp(creatureClass, "monster_grunt") == 0) {
+								spawnName = "monster_pokemon_grunt";
+							} else if (idStr::Icmp(creatureClass, "monster_iron_maiden") == 0) {
+								spawnName = "monster_pokemon_iron_maiden";
+							} else if (idStr::Icmp(creatureClass, "monster_gunner") == 0) {
+								spawnName = "monster_pokemon_gunner";
+							} else if (idStr::Icmp(creatureClass, "monster_bossbuddy") == 0){
+								spawnName = "monster_pokemon_bossbuddy";
+							} else if (idStr::Icmp(creatureClass, "monster_makron") == 0) {
+								spawnName = "monster_pokemon_makron";
+							}
+							if (spawnName != "") {
+								gameLocal.GetLocalPlayer()->pokemonArray.Append({ spawnName, 0, 1, 500 });
+								gameLocal.GetLocalPlayer()->GiveItem("ammo_pokeballlauncher");
+							}
+						}
+					}
 				}
 			}
 		}
@@ -1106,7 +1139,8 @@ void idProjectile::Fizzle( void ) {
 		if (idStr::Icmp(projName, "projectile_pokeball") == 0) {
 			launchEnd = GetEyePosition();
 			idDict dict;
-			dict.Set("classname", gameLocal.GetLocalPlayer()->pokemonArray[0].name);
+			gameLocal.Printf("pokemon on top %s\n", gameLocal.GetLocalPlayer()->pokemonArray.StackTop().name);
+			dict.Set("classname", gameLocal.GetLocalPlayer()->pokemonArray.StackTop().name);
 			dict.Set("origin", launchEnd.ToString());
 			idEntity* pokemon;
 			gameLocal.SpawnEntityDef(dict, &pokemon);
