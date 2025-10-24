@@ -735,8 +735,42 @@ bool idProjectile::Collide( const trace_t &collision, const idVec3 &velocity, bo
 			if (idStr::Icmp(projName, "projectile_emptypokeball") == 0) {
 				if (creature->aifl.pokemon && gameLocal.GetLocalPlayer()->activePokemon) {
 					if (gameLocal.GetLocalPlayer()->pokemonArray.Num() < 10) {
-						gameLocal.GetLocalPlayer()->pokemonArray.Append({ creature->spawnArgs.GetString("classname"), creature->xp, creature->level, creature->xpToLevelUp });
-						gameLocal.GetLocalPlayer()->GiveItem("ammo_pokeballlauncher");
+						const char* creatureClass = creature->spawnArgs.GetString("classname");
+						const char* spawnName = "";
+						if (idStr::Icmp(creatureClass, "monster_pokemon_strogg_marine") == 0) {
+							spawnName = "monster_pokemon_strogg_marine";
+						}
+						else if (idStr::Icmp(creatureClass, "monster_pokemon_strogg_marine_sgun") == 0) {
+							spawnName = "monster_pokemon_strogg_marine_sgun";
+						}
+						else if (idStr::Icmp(creatureClass, "monster_pokemon_strogg_marine_mgun") == 0) {
+							spawnName = "monster_pokemon_strogg_marine_mgun";
+						}
+						else if (idStr::Icmp(creatureClass, "monster_pokemon_gladiator") == 0) {
+							spawnName = "monster_pokemon_gladiator";
+						}
+						else if (idStr::Icmp(creatureClass, "monster_pokemon_berserker") == 0) {
+							spawnName = "monster_pokemon_berserker";
+						}
+						else if (idStr::Icmp(creatureClass, "monster_pokemon_grunt") == 0) {
+							spawnName = "monster_pokemon_grunt";
+						}
+						else if (idStr::Icmp(creatureClass, "monster_pokemon_iron_maiden") == 0) {
+							spawnName = "monster_pokemon_iron_maiden";
+						}
+						else if (idStr::Icmp(creatureClass, "monster_pokemon_gunner") == 0) {
+							spawnName = "monster_pokemon_gunner";
+						}
+						else if (idStr::Icmp(creatureClass, "monster_pokemon_bossbuddy") == 0) {
+							spawnName = "monster_pokemon_bossbuddy";
+						}
+						else if (idStr::Icmp(creatureClass, "monster_pokemon_makron") == 0) {
+							spawnName = "monster_pokemon_makron";
+						}
+						if (spawnName != "") {
+							gameLocal.GetLocalPlayer()->pokemonArray.Append({ spawnName, creature->xp, creature->level, creature->xpToLevelUp});
+							gameLocal.GetLocalPlayer()->GiveItem("ammo_pokeballlauncher");
+						}
 					}
 					creature->Killed(this, this, 0, vec3_zero, INVALID_JOINT);
 				} else {

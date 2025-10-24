@@ -1348,11 +1348,11 @@ idPlayer::idPlayer() {
 	}
 	activePokemon = NULL;
 	activeEnemy = NULL;
-	powerHerbs = 1;
-	shields = 1;
-	blackBelts = 1;
-	lifeOrbs = 1;
-	rareCandies = 1;
+	powerHerbs = 0;
+	shields = 0;
+	blackBelts = 0;
+	lifeOrbs = 0;
+	rareCandies = 0;
 	itemMenu = false;
 }
 
@@ -3454,7 +3454,16 @@ void idPlayer::UpdateHudStats( idUserInterface *_hud ) {
 
 	if (pfl.combat) {
 		if (activePokemon && activeEnemy) {
-			hud->SetStateString("currentPokemon", activePokemon->spawnArgs.GetString("classname"));
+			char* names[] = { "monster_pokemon_strogg_marine", "monster_pokemon_strogg_marine_sgun", "monster_pokemon_strogg_marine_mgun", "monster_pokemon_gladiator", "monster_pokemon_grunt", "monster_pokemon_berserker", "monster_pokemon_iron_maiden", "monster_pokemon_gunner", "monster_pokemon_bossbuddy", "monster_pokemon_makron" };
+			const char* pokeclass = activePokemon->spawnArgs.GetString("classname");
+			int i = 0;
+			while (i < 10) {
+				if (idStr::Icmp(names[i], pokeclass) == 0) {
+					break;
+				}
+				i++;
+			}
+			hud->SetStateInt("currentPokemon", i);
 			hud->HandleNamedEvent("showCombatOptions");
 			hud->HandleNamedEvent("showPokeHealth");
 			hud->HandleNamedEvent("showEnemyHealth");

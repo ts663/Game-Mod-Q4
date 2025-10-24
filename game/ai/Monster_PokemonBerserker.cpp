@@ -116,8 +116,6 @@ void rvMonsterPokemonBerserker::PrintDets(void) {
 	gameLocal.Printf("XP to level up: %d\n", xpToLevelUp);
 	gameLocal.Printf("Player's active pokemon: %s\n", gameLocal.GetLocalPlayer()->activePokemon->name.c_str());
 	gameLocal.Printf("--------------------------------------\n");
-	gameLocal.Printf("Spawned pokemon berserker\n");
-	PrintDets();
 }
 
 /*

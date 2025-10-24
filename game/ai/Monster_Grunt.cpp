@@ -87,9 +87,6 @@ void rvMonsterGrunt::Attack1(void) {
 	if (!enemy) {
 		return;
 	}
-	if (!aifl.turn) {
-		return;
-	}
 	TurnToward(enemy->GetEyePosition());
 	PlayAnim(ANIMCHANNEL_LEGS, "melee_attack1", 4);
 	enemy->health -= 10 - (10 * enemy->nullify);
@@ -187,10 +184,10 @@ rvMonsterGrunt::CheckActions
 */
 bool rvMonsterGrunt::CheckActions ( void ) {
 	// If our health is below the rage threshold then enrage
-	if ( health < rageThreshold ) { 
+	/*if ( health < rageThreshold ) { 
 		PerformAction ( "Torso_Enrage", 4, true );
 		return true;
-	}
+	}*/
 
 	// Moving melee attack?
 	if ( PerformAction ( &actionMeleeMoveAttack, (checkAction_t)&idAI::CheckAction_MeleeAttack, NULL ) ) {

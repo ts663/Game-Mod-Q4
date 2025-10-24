@@ -341,10 +341,10 @@ rvMonsterPokemonGrunt::CheckActions
 */
 bool rvMonsterPokemonGrunt::CheckActions(void) {
 	// If our health is below the rage threshold then enrage
-	if (health < rageThreshold) {
+	/*if (health < rageThreshold) {
 		PerformAction("Torso_Enrage", 4, true);
 		return true;
-	}
+	}*/
 
 	// Moving melee attack?
 	if (PerformAction(&actionMeleeMoveAttack, (checkAction_t)&idAI::CheckAction_MeleeAttack, NULL)) {

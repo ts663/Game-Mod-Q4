@@ -893,6 +893,7 @@ void idAI::Spawn( void ) {
 			aifl.disableLook = true;
 		}
 	}*/
+	Event_BecomePassive(true);
 	combat.fl.ignoreEnemies = true;
 	
 	// Print out a warning about any AI that is spawned unhidden since they will be all thinking

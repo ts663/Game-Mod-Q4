@@ -3,6 +3,8 @@
 
 #include "../Game_local.h"
 
+const idEventDef EV_LetEnemyAttack("letEnemyAttack");
+
 class rvMonsterPokemonBossMakron : public idAI {
 public:
 
@@ -14,6 +16,7 @@ public:
 	void				PrintDets(void);
 	void				GiveXP(int);
 	void				Attack1(void);
+	void				LetEnemyAttack(void);
 	void				Attack2(void);
 	void				Attack3(void);
 	void				Heal(void);
@@ -242,6 +245,7 @@ EVENT(EV_Separate, rvMonsterPokemonBossMakron::Event_Separate)
 EVENT(EV_FlyingRotate, rvMonsterPokemonBossMakron::Event_FlyingRotate)
 EVENT(AI_ScriptedFace, rvMonsterPokemonBossMakron::ScriptedFace)
 EVENT(EV_ToggleCornerState, rvMonsterPokemonBossMakron::Event_ToggleCornerState)
+EVENT(EV_LetEnemyAttack, rvMonsterPokemonBossMakron::LetEnemyAttack)
 END_CLASS
 
 /*
@@ -652,6 +656,50 @@ void rvMonsterPokemonBossMakron::Attack1(void) {
 	if (!secondTurn) {
 		aifl.turn = 0;
 	}
+	PostEventMS(&EV_LetEnemyAttack, 750);
+}
+
+/*
+================
+rvMonsterPokemonMakron::LetEnemyAttack
+================
+*/
+void rvMonsterPokemonBossMakron::LetEnemyAttack(void) {
+	idAI* enemy = gameLocal.GetLocalPlayer()->activeEnemy;
+	waitingforattack = true;
+	enemy->health -= damagetodeal;
+	if (enemy->health <= 0) {
+		enemy->aifl.defeated = 1;
+		health = maxHealth;
+		gameLocal.GetLocalPlayer()->pfl.combat = false;
+		GiveXP(enemy->defeatXp);
+		int randItem = rand() % 5;
+		if (randItem == 0) {
+			gameLocal.GetLocalPlayer()->powerHerbs++;
+		}
+		else if (randItem == 1) {
+			gameLocal.GetLocalPlayer()->shields++;
+		}
+		else if (randItem == 2) {
+			gameLocal.GetLocalPlayer()->blackBelts++;
+		}
+		else if (randItem == 3) {
+			gameLocal.GetLocalPlayer()->lifeOrbs++;
+		}
+		else {
+			gameLocal.GetLocalPlayer()->rareCandies++;
+		}
+	}
+	else if (!secondTurn) {
+		int attack = rand() % 2;
+		if (!attack) {
+			enemy->Attack1();
+		}
+		else {
+			enemy->Attack2();
+		}
+	}
+	secondTurn = 0;
 }
 
 /*
@@ -778,6 +826,7 @@ void rvMonsterPokemonBossMakron::Think(void) {
 					gameLocal.GetLocalPlayer()->rareCandies++;
 				}
 			} else if (!secondTurn) {
+				gameLocal.Printf("enemy's turn\n");
 				int attack = rand() % 2;
 				if (!attack) {
 					enemy->Attack1();

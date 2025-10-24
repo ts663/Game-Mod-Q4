@@ -7,6 +7,7 @@
 
 // Ranged attack loop
 const idEventDef EV_RangedAttackLoop("rangedAttackLoop");
+const idEventDef EV_LetEnemyAttack("letEnemyAttack");
 
 class rvMonsterPokemonGladiator : public idAI {
 public:
@@ -20,6 +21,7 @@ public:
 	void					PrintDets(void);
 	void					GiveXP(int);
 	void					Attack1(void);
+	void					LetEnemyAttack(void);
 	void					Attack2(void);
 	void					RangedAttackLoop(void);
 	void					Attack3(void);
@@ -101,6 +103,7 @@ private:
 
 CLASS_DECLARATION(idAI, rvMonsterPokemonGladiator)
 	EVENT(EV_RangedAttackLoop, rvMonsterPokemonGladiator::RangedAttackLoop)
+	EVENT(EV_LetEnemyAttack, rvMonsterPokemonGladiator::LetEnemyAttack)
 END_CLASS
 
 /*
@@ -221,7 +224,7 @@ void rvMonsterPokemonGladiator::Attack1(void) {
 		return;
 	}
 	TurnToward(enemy->GetEyePosition());
-	PlayAnim(ANIMCHANNEL_LEGS, "melee_attack", 4);
+	PlayAnim(ANIMCHANNEL_LEGS, "melee_attack1", 4);
 	waitingforattack = true;
 	double pow = 1.0;
 	for (int i = 1; i < level; i++) {
@@ -232,6 +235,49 @@ void rvMonsterPokemonGladiator::Attack1(void) {
 	if (!secondTurn) {
 		aifl.turn = 0;
 	}
+	PostEventMS(&EV_LetEnemyAttack, 750);
+}
+
+/*
+================
+rvMonsterPokemonGladiator::LetEnemyAttack
+================
+*/
+void rvMonsterPokemonGladiator::LetEnemyAttack(void) {
+	idAI* enemy = gameLocal.GetLocalPlayer()->activeEnemy;
+	enemy->health -= damagetodeal;
+	if (enemy->health <= 0) {
+		enemy->aifl.defeated = 1;
+		health = maxHealth;
+		gameLocal.GetLocalPlayer()->pfl.combat = false;
+		GiveXP(enemy->defeatXp);
+		int randItem = rand() % 5;
+		if (randItem == 0) {
+			gameLocal.GetLocalPlayer()->powerHerbs++;
+		}
+		else if (randItem == 1) {
+			gameLocal.GetLocalPlayer()->shields++;
+		}
+		else if (randItem == 2) {
+			gameLocal.GetLocalPlayer()->blackBelts++;
+		}
+		else if (randItem == 3) {
+			gameLocal.GetLocalPlayer()->lifeOrbs++;
+		}
+		else {
+			gameLocal.GetLocalPlayer()->rareCandies++;
+		}
+	}
+	else if (!secondTurn) {
+		int attack = rand() % 2;
+		if (!attack) {
+			enemy->Attack1();
+		}
+		else {
+			enemy->Attack2();
+		}
+	}
+	secondTurn = 0;
 }
 
 /*
@@ -279,7 +325,7 @@ void rvMonsterPokemonGladiator::RangedAttackLoop(void) {
 	}
 	else {
 		PlayAnim(ANIMCHANNEL_LEGS, "blaster_end", 4);
-		waitingforattack = true;
+		PostEventMS(&EV_LetEnemyAttack, 100);
 	}
 }
 
@@ -311,6 +357,7 @@ void rvMonsterPokemonGladiator::Attack3(void) {
 	if (!secondTurn) {
 		aifl.turn = 0;
 	}
+	PostEventMS(&EV_LetEnemyAttack, 750);
 }
 
 /*

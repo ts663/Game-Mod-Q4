@@ -332,6 +332,7 @@ void rvMonsterPokemonStroggMarine::Evolve(void) {
 	}
 	idEntity* pokemon;
 	gameLocal.SpawnEntityDef(dict, &pokemon);
+	gameLocal.GetLocalPlayer()->pfl.combat = true;
 }
 
 /*
